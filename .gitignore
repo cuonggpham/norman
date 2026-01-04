@@ -1,0 +1,202 @@
+# ============================================
+# Norman - Japanese Legal RAG System
+# Git Ignore Configuration
+# ============================================
+
+# --------------------------------------------
+# Environment & Secrets
+# --------------------------------------------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# --------------------------------------------
+# Python
+# --------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+.venv/
+ENV/
+env/
+.conda/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# --------------------------------------------
+# Data Files (Large files - download separately)
+# --------------------------------------------
+# Raw XML data from e-Gov API
+data/xml_raw/
+
+# Processed JSON files
+data/processed/
+
+# Chunked data
+data/chunks/
+
+# Embeddings cache
+data/embeddings/
+
+# Keep directory structure
+!data/.gitkeep
+!data/*/.gitkeep
+
+# --------------------------------------------
+# Vector Database
+# --------------------------------------------
+# Qdrant local storage
+qdrant_storage/
+qdrant_data/
+
+# --------------------------------------------
+# Neo4j (Future)
+# --------------------------------------------
+neo4j_data/
+neo4j/data/
+neo4j/logs/
+
+# --------------------------------------------
+# Models & Cache
+# --------------------------------------------
+# Hugging Face cache
+.cache/
+models/
+*.bin
+*.pt
+*.onnx
+*.safetensors
+
+# Sentence Transformers
+sentence_transformers/
+
+# --------------------------------------------
+# IDE & Editors
+# --------------------------------------------
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# --------------------------------------------
+# OS Generated
+# --------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# --------------------------------------------
+# Logs & Temporary Files
+# --------------------------------------------
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+temp/
+
+# --------------------------------------------
+# Jupyter Notebooks
+# --------------------------------------------
+.ipynb_checkpoints/
+*.ipynb
+
+# --------------------------------------------
+# Docker
+# --------------------------------------------
+docker-compose.override.yml
+
+# --------------------------------------------
+# Testing & Coverage
+# --------------------------------------------
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+
+# --------------------------------------------
+# Documentation Build
+# --------------------------------------------
+docs/_build/
+site/
+
+# --------------------------------------------
+# Misc
+# --------------------------------------------
+*.bak
+*.backup
+.benchmarks/
