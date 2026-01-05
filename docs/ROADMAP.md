@@ -35,34 +35,13 @@ Lộ trình phát triển hệ thống RAG cho văn bản pháp luật Nhật B�
 
 ---
 
-## 📋 Phase 2: Reranking Integration (Next)
+## 📋 Phase 2: Response Generation with API (Next)
 
-### 2.1 Reranker Options
-| Model | Type | Pros | Cons |
-|-------|------|------|------|
-| Cohere Rerank | API | Chất lượng cao | Trả phí |
-| BAAI/bge-reranker-large | Local | Miễn phí, đa ngôn ngữ | Cần GPU |
-| cross-encoder/ms-marco | Local | Nhanh | Chủ yếu English |
-
-### 2.2 Two-Stage Retrieval
-```
-Query → Vector Search (top 50) → Rerank → Final Results (top 5)
-```
-
-### 2.3 Tasks
-- [ ] Chọn reranker phù hợp (Cohere API hoặc BGE local)
-- [ ] Implement `app/services/reranker.py`
-- [ ] Tích hợp vào search pipeline
-
----
-
-## 📋 Phase 3: Response Generation with Highlighting
-
-### 3.1 LLM Integration
+### 2.1 LLM Integration
 - [ ] Sử dụng retrieved chunks làm context
-- [ ] Generate answer với citations
+- [ ] Generate answer với citations (OpenAI GPT-4o-mini)
 
-### 3.2 Highlight Response Format
+### 2.2 Response Format with Highlighting
 ```json
 {
   "answer": "Theo Điều 1...",
@@ -77,9 +56,35 @@ Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 }
 ```
 
-### 3.3 API Design
-- [ ] Implement `POST /api/search` endpoint
-- [ ] Implement `POST /api/chat` endpoint (RAG với LLM)
+### 2.3 API Endpoints
+- [ ] Implement `POST /api/search` - Vector search endpoint
+- [ ] Implement `POST /api/chat` - RAG chat với LLM
+
+### 2.4 Tasks
+- [ ] Implement `app/services/llm.py` - LLM service with context
+- [ ] Implement `app/api/routes.py` - FastAPI routes
+- [ ] Setup FastAPI app với CORS, health check
+
+---
+
+## 📋 Phase 3: Reranking Integration
+
+### 3.1 Reranker Options
+| Model | Type | Pros | Cons |
+|-------|------|------|------|
+| Cohere Rerank | API | Chất lượng cao | Trả phí |
+| BAAI/bge-reranker-large | Local | Miễn phí, đa ngôn ngữ | Cần GPU |
+| cross-encoder/ms-marco | Local | Nhanh | Chủ yếu English |
+
+### 3.2 Two-Stage Retrieval
+```
+Query → Vector Search (top 50) → Rerank → Final Results (top 5)
+```
+
+### 3.3 Tasks
+- [ ] Chọn reranker phù hợp (Cohere API hoặc BGE local)
+- [ ] Implement `app/services/reranker.py`
+- [ ] Tích hợp vào search pipeline
 
 ---
 
@@ -119,10 +124,10 @@ Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 |-----------|------------|--------|
 | Embedding | OpenAI text-embedding-3-large | ✅ Done |
 | Vector DB | Qdrant Cloud (Free Tier) | ✅ Done |
-| Reranker | TBD (Cohere/BGE) | 📋 Next |
+| LLM | OpenAI GPT-4o-mini | 📋 Next |
+| Backend | FastAPI (Python) | � Next |
+| Reranker | TBD (Cohere/BGE) | ⬜ Phase 3 |
 | Graph DB | Neo4j | ⬜ Future |
-| Backend | FastAPI (Python) | 🔧 In Progress |
-| LLM | OpenAI GPT-4o-mini | 📋 Phase 3 |
 
 ---
 
@@ -132,6 +137,6 @@ Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 |-------|----------|--------|
 | Phase 0 | 1 day | ✅ Complete |
 | Phase 1 | 2 days | ✅ Complete |
-| Phase 2 | 2-3 days | 📋 Next |
-| Phase 3 | 3-5 days | ⬜ Pending |
+| Phase 2 | 3-5 days | 📋 Next |
+| Phase 3 | 2-3 days | ⬜ Pending |
 | Phase 4 | 5-7 days | ⬜ Pending |
