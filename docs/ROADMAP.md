@@ -4,10 +4,11 @@ Lộ trình phát triển hệ thống RAG cho văn bản pháp luật Nhật B�
 
 ---
 
-## ✅ Phase 0: Data Collection & Processing (Current)
+## ✅ Phase 0: Data Collection & Processing (Complete)
 - [x] Download XML từ e-Gov API
 - [x] Parse XML → JSON với cấu trúc hierarchical
-- [ ] **Chunking data** để chuẩn bị cho embedding
+- [x] **Chunking data** để chuẩn bị cho embedding
+- [x] **Embedding chunks** với OpenAI text-embedding-3-large (15,629 chunks → 183 MB)
 
 ---
 
