@@ -80,9 +80,11 @@ data/chunks/
 # Embeddings cache
 data/embeddings/
 
-# Keep directory structure
+# Keep directory structure and documentation
 !data/.gitkeep
 !data/*/.gitkeep
+!data/README.md
+!data/*/README.md
 
 # --------------------------------------------
 # Vector Database
