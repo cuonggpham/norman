@@ -7,39 +7,35 @@ Lộ trình phát triển hệ thống RAG cho văn bản pháp luật Nhật B�
 ## ✅ Phase 0: Data Collection & Processing (Complete)
 - [x] Download XML từ e-Gov API
 - [x] Parse XML → JSON với cấu trúc hierarchical
-- [x] **Chunking data** để chuẩn bị cho embedding
-- [x] **Embedding chunks** với OpenAI text-embedding-3-large (15,629 chunks → 183 MB)
+- [x] Chunking data để chuẩn bị cho embedding
+- [x] Embedding chunks với OpenAI text-embedding-3-large (15,629 chunks → 192 MB)
 
 ---
 
-## 📋 Phase 1: Vector Search with Qdrant
+## ✅ Phase 1: Vector Search with Qdrant (Complete)
 
 ### 1.1 Setup Infrastructure
-```bash
-# Self-host Qdrant với Docker
-docker run -p 6333:6333 -p 6334:6334 \
-  -v $(pwd)/qdrant_storage:/qdrant/storage:z \
-  qdrant/qdrant
-```
+- [x] Sử dụng **Qdrant Cloud Free Tier** thay vì Docker self-hosted
+- [x] Cấu hình `.env` với QDRANT_URL và QDRANT_API_KEY
 
 ### 1.2 Embedding với OpenAI
-- Model: `text-embedding-3-small` (1536 dimensions) hoặc `text-embedding-3-large` (3072 dimensions)
-- Batch processing để tối ưu API calls
-- Caching embeddings để tránh duplicate calls
+- [x] Model: `text-embedding-3-large` (3072 dimensions)
+- [x] Batch processing để tối ưu API calls
+- [x] Caching embeddings trong `data/embeddings/`
 
 ### 1.3 Indexing Pipeline
-```
-Chunks → OpenAI Embedding → Qdrant Upsert
-```
+- [x] Implement `app/db/qdrant.py` - Qdrant client functions
+- [x] Implement `scripts/indexer.py` - Batch upload với retry logic
+- [x] Upload 15,629 vectors lên Qdrant Cloud
 
 ### 1.4 Search Implementation
-- Vector similarity search
-- Metadata filtering (by law, category, article)
-- Hybrid search (vector + keyword) nếu cần
+- [x] Vector similarity search với `search()` function
+- [x] Metadata filtering (by law_id, category, etc.)
+- [ ] Hybrid search (vector + keyword) - *optional*
 
 ---
 
-## 📋 Phase 2: Reranking Integration
+## 📋 Phase 2: Reranking Integration (Next)
 
 ### 2.1 Reranker Options
 | Model | Type | Pros | Cons |
@@ -53,13 +49,18 @@ Chunks → OpenAI Embedding → Qdrant Upsert
 Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 ```
 
+### 2.3 Tasks
+- [ ] Chọn reranker phù hợp (Cohere API hoặc BGE local)
+- [ ] Implement `app/services/reranker.py`
+- [ ] Tích hợp vào search pipeline
+
 ---
 
 ## 📋 Phase 3: Response Generation with Highlighting
 
 ### 3.1 LLM Integration
-- Sử dụng retrieved chunks làm context
-- Generate answer với citations
+- [ ] Sử dụng retrieved chunks làm context
+- [ ] Generate answer với citations
 
 ### 3.2 Highlight Response Format
 ```json
@@ -77,14 +78,8 @@ Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 ```
 
 ### 3.3 API Design
-```
-POST /api/search
-{
-  "query": "労働時間の制限",
-  "top_k": 5,
-  "filters": { "category": "労働" }
-}
-```
+- [ ] Implement `POST /api/search` endpoint
+- [ ] Implement `POST /api/chat` endpoint (RAG với LLM)
 
 ---
 
@@ -103,14 +98,6 @@ POST /api/search
 - Trace lịch sử sửa đổi của một điều
 - Tìm định nghĩa thuật ngữ pháp lý
 
-### 4.3 Implementation
-```bash
-# Self-host Neo4j
-docker run -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/password \
-  neo4j:latest
-```
-
 ---
 
 ## 📋 Phase 5: Production Deployment (Future)
@@ -124,32 +111,27 @@ docker run -p 7474:7474 -p 7687:7687 \
 - Search UI với highlight
 - Law browser với navigation
 
-### 5.3 Monitoring
-- Search quality metrics
-- Latency tracking
-- Error monitoring
-
 ---
 
 ## Tech Stack Summary
 
-| Component | Technology |
-|-----------|------------|
-| Embedding | OpenAI text-embedding-3 |
-| Vector DB | Qdrant (self-hosted Docker) |
-| Reranker | TBD (Cohere/BGE) |
-| Graph DB | Neo4j (future) |
-| Backend | FastAPI (Python) |
-| LLM | OpenAI GPT-4 / Claude |
+| Component | Technology | Status |
+|-----------|------------|--------|
+| Embedding | OpenAI text-embedding-3-large | ✅ Done |
+| Vector DB | Qdrant Cloud (Free Tier) | ✅ Done |
+| Reranker | TBD (Cohere/BGE) | 📋 Next |
+| Graph DB | Neo4j | ⬜ Future |
+| Backend | FastAPI (Python) | 🔧 In Progress |
+| LLM | OpenAI GPT-4o-mini | 📋 Phase 3 |
 
 ---
 
-## Timeline Estimate
+## Timeline & Progress
 
 | Phase | Duration | Status |
 |-------|----------|--------|
-| Phase 0 | 1 day | 🟡 In Progress |
-| Phase 1 | 3-5 days | ⬜ Pending |
-| Phase 2 | 2-3 days | ⬜ Pending |
+| Phase 0 | 1 day | ✅ Complete |
+| Phase 1 | 2 days | ✅ Complete |
+| Phase 2 | 2-3 days | 📋 Next |
 | Phase 3 | 3-5 days | ⬜ Pending |
 | Phase 4 | 5-7 days | ⬜ Pending |
