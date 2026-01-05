@@ -105,7 +105,8 @@ neo4j/logs/
 # --------------------------------------------
 # Hugging Face cache
 .cache/
-models/
+/models/              # Only root-level models/ (not app/models/)
+!app/models/       # Exception: Pydantic schemas (not ML models)
 *.bin
 *.pt
 *.onnx
