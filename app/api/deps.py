@@ -11,6 +11,7 @@ from typing import Any
 from app.core.config import get_settings
 from app.core.protocols import VectorStore
 from app.llm.openai_provider import OpenAIProvider
+from app.llm.query_translator import QueryTranslator
 from app.services.embedding import EmbeddingService
 from app.db.qdrant import get_qdrant_client, search as qdrant_search, get_collection_name
 from app.pipelines.rag import RAGPipeline
@@ -96,6 +97,12 @@ def get_vector_store() -> QdrantVectorStore:
 
 
 @lru_cache
+def get_query_translator() -> QueryTranslator:
+    """Get cached query translator for cross-lingual search."""
+    return QueryTranslator(llm=get_llm_provider())
+
+
+@lru_cache
 def get_rag_pipeline() -> RAGPipeline:
     """
     Get cached RAG pipeline.
@@ -107,6 +114,7 @@ def get_rag_pipeline() -> RAGPipeline:
         vector_store=get_vector_store(),
         llm=get_llm_provider(),
         reranker=None,  # Add in Phase 3
+        translator=get_query_translator(),  # Vietnamese → Japanese
     )
 
 

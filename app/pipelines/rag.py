@@ -4,12 +4,21 @@ RAG Pipeline - Orchestrates retrieval and generation.
 Coordinates between embedding, vector search, optional reranking, and LLM generation.
 """
 
+import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 from app.core.protocols import LLMProvider, EmbeddingProvider, VectorStore, Reranker
 from app.models.schemas import ChatResponse, SearchResult, SourceDocument
+
+logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class QueryTranslator(Protocol):
+    """Protocol for query translator."""
+    def translate(self, query: str) -> str: ...
 
 
 @dataclass
@@ -36,6 +45,7 @@ class RAGPipeline:
     vector_store: VectorStore
     llm: LLMProvider
     reranker: Reranker | None = None
+    translator: QueryTranslator | None = None  # Cross-lingual translation
     
     # Default settings
     default_top_k: int = 5
@@ -61,8 +71,11 @@ class RAGPipeline:
         start_time = time.time()
         top_k = top_k or self.default_top_k
         
+        # Translate query if translator available (Vietnamese → Japanese)
+        search_query = self._translate_query(query)
+        
         # Embed query
-        query_vector = self.embedding.embed(query)
+        query_vector = self.embedding.embed(search_query)
         
         # Search
         raw_results = self.vector_store.search(
@@ -100,10 +113,13 @@ class RAGPipeline:
         start_time = time.time()
         top_k = top_k or self.default_top_k
         
+        # 0. Translate query if translator available
+        search_query = self._translate_query(query)
+        
         # 1. Retrieve (get more if reranking)
         retrieve_k = top_k * self.retrieval_multiplier if self.reranker else top_k
         
-        query_vector = self.embedding.embed(query)
+        query_vector = self.embedding.embed(search_query)
         raw_results = self.vector_store.search(
             query_vector=query_vector,
             top_k=retrieve_k,
@@ -182,3 +198,21 @@ class RAGPipeline:
             score=result.get("score", 0.0),
             highlight_path=highlight_path if isinstance(highlight_path, dict) else {},
         )
+    
+    def _translate_query(self, query: str) -> str:
+        """
+        Translate query using translator if available.
+        
+        Falls back to original query if translation fails or no translator.
+        """
+        if not self.translator:
+            return query
+        
+        try:
+            translated = self.translator.translate(query)
+            if translated and translated != query:
+                logger.info(f"Query translated: '{query}' → '{translated}'")
+            return translated
+        except Exception as e:
+            logger.warning(f"Translation failed, using original query: {e}")
+            return query
