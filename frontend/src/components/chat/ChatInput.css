@@ -1,0 +1,102 @@
+.chat-input {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border);
+}
+
+.chat-input__container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-end;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    transition: border-color var(--transition-fast);
+}
+
+.chat-input__container:focus-within {
+    border-color: var(--color-primary);
+}
+
+.chat-input__textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    resize: none;
+    padding: var(--spacing-sm);
+    min-height: 24px;
+    max-height: 150px;
+}
+
+.chat-input__textarea:focus {
+    outline: none;
+}
+
+.chat-input__textarea::placeholder {
+    color: var(--color-text-muted);
+}
+
+.chat-input__textarea:disabled {
+    opacity: 0.6;
+}
+
+.chat-input__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.chat-input__button:hover:not(:disabled) {
+    background: var(--color-accent);
+}
+
+.chat-input__button:disabled {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+}
+
+.chat-input__loading {
+    width: 18px;
+    height: 18px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.chat-input__hint {
+    max-width: 800px;
+    margin: var(--spacing-xs) auto 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 640px) {
+    .chat-input {
+        padding: var(--spacing-sm);
+    }
+
+    .chat-input__hint {
+        display: none;
+    }
+}
