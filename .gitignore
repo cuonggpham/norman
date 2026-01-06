@@ -203,3 +203,11 @@ site/
 *.bak
 *.backup
 .benchmarks/
+
+# --------------------------------------------
+# Frontend (React/Vite)
+# --------------------------------------------
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
