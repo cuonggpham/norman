@@ -13,10 +13,10 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 
-# Directories
-BASE_DIR = Path(__file__).parent
-RAW_XML_DIR = BASE_DIR / "data" / "xml_raw"
-PROCESSED_DIR = BASE_DIR / "data" / "processed"
+# Directories - use project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # scripts -> backend -> norman
+RAW_XML_DIR = PROJECT_ROOT / "data" / "xml_raw"
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 
 
 def ensure_processed_dir():
@@ -195,10 +195,24 @@ def parse_law_full_text(law_full_text: Optional[ET.Element]) -> Optional[Dict[st
         # Parse main provision
         main_provision = law_body.find("MainProvision")
         if main_provision is not None:
-            for chapter in main_provision.findall("Chapter"):
-                result["law_body"]["main_provision"]["chapters"].append(
-                    parse_chapter(chapter)
-                )
+            # First check for chapters (typical for Acts)
+            chapters = main_provision.findall("Chapter")
+            if chapters:
+                for chapter in chapters:
+                    result["law_body"]["main_provision"]["chapters"].append(
+                        parse_chapter(chapter)
+                    )
+            else:
+                # No chapters - Articles directly under MainProvision (typical for CO)
+                # Create a virtual "chapter" to hold these articles
+                articles = main_provision.findall("Article")
+                if articles:
+                    virtual_chapter = {
+                        "num": None,
+                        "title": None,
+                        "articles": [parse_article(art) for art in articles]
+                    }
+                    result["law_body"]["main_provision"]["chapters"].append(virtual_chapter)
         
         # Parse supplementary provisions
         for suppl in law_body.findall("SupplProvision"):

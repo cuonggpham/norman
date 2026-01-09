@@ -5,7 +5,12 @@ Translates Vietnamese queries to Japanese for better semantic search
 against Japanese legal documents.
 """
 
+import json
+import logging
+from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
+
+logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
@@ -25,16 +30,46 @@ Quy tắc:
 4. Nếu input đã là tiếng Nhật, trả về nguyên bản"""
 
 
+# Query expansion prompt
+QUERY_EXPANSION_SYSTEM = """Bạn là chuyên gia pháp luật lao động Nhật Bản.
+Phân tích câu hỏi pháp lý và trả về JSON với các thông tin sau:
+
+1. translated: Bản dịch tiếng Nhật của câu hỏi
+2. keywords: 3-5 keywords pháp lý tiếng Nhật liên quan (重要!)
+3. related_terms: 2-3 thuật ngữ liên quan (có thể là số điều, tên luật)
+4. search_queries: 2-3 câu query tìm kiếm khác nhau (tiếng Nhật)
+
+Trả về CHÍNH XÁC format JSON sau, không có text khác:
+{"translated": "...", "keywords": [...], "related_terms": [...], "search_queries": [...]}
+
+Ví dụ cho câu hỏi "Thời gian làm việc tối đa một tuần là bao nhiêu giờ?":
+{"translated": "週の最大労働時間は何時間ですか？", "keywords": ["労働時間", "法定労働時間", "週40時間", "一週間"], "related_terms": ["第三十二条", "労働基準法"], "search_queries": ["法定労働時間の上限", "週の労働時間制限", "労働基準法の労働時間規定"]}"""
+
+
+@dataclass
+class QueryExpansion:
+    """Result of query expansion."""
+    original: str
+    translated: str
+    keywords: list[str] = field(default_factory=list)
+    related_terms: list[str] = field(default_factory=list)
+    search_queries: list[str] = field(default_factory=list)
+
+
 class QueryTranslator:
     """
     Translates Vietnamese queries to Japanese for semantic search.
     
     Uses LLM to translate while preserving legal terminology.
+    Now with query expansion for better retrieval.
     
     Example:
         translator = QueryTranslator(llm=OpenAIProvider(...))
         ja_query = translator.translate("Quy định về thời gian làm việc")
         # Returns: "労働時間に関する規定"
+        
+        expansion = translator.expand("Quy định về sa thải nhân viên")
+        # Returns QueryExpansion with keywords, related_terms, search_queries
     """
     
     def __init__(self, llm: LLMProvider):
@@ -70,6 +105,80 @@ class QueryTranslator:
         
         return translated.strip()
     
+    def expand(self, query: str) -> QueryExpansion:
+        """
+        Expand query with keywords and multiple search queries.
+        
+        Args:
+            query: Vietnamese query string
+            
+        Returns:
+            QueryExpansion with translated query, keywords, and search queries
+        """
+        # If already Japanese, still extract keywords
+        messages = [
+            {"role": "system", "content": QUERY_EXPANSION_SYSTEM},
+            {"role": "user", "content": query},
+        ]
+        
+        try:
+            response = self._llm.generate(messages, temperature=0.2, max_tokens=512)
+            
+            # Parse JSON response
+            # Clean up response - remove markdown code blocks if present
+            response = response.strip()
+            if response.startswith("```"):
+                response = response.split("```")[1]
+                if response.startswith("json"):
+                    response = response[4:]
+            response = response.strip()
+            
+            data = json.loads(response)
+            
+            return QueryExpansion(
+                original=query,
+                translated=data.get("translated", self.translate(query)),
+                keywords=data.get("keywords", []),
+                related_terms=data.get("related_terms", []),
+                search_queries=data.get("search_queries", []),
+            )
+        except (json.JSONDecodeError, Exception) as e:
+            logger.warning(f"Query expansion failed, falling back to simple translation: {e}")
+            # Fallback to simple translation
+            return QueryExpansion(
+                original=query,
+                translated=self.translate(query),
+                keywords=[],
+                related_terms=[],
+                search_queries=[],
+            )
+    
+    def get_all_search_texts(self, query: str) -> list[str]:
+        """
+        Get all texts to use for search (for multi-query retrieval).
+        
+        Returns list of:
+        1. Original translated query
+        2. Additional search queries from expansion
+        
+        Args:
+            query: Vietnamese query string
+            
+        Returns:
+            List of Japanese search texts
+        """
+        expansion = self.expand(query)
+        
+        texts = [expansion.translated]
+        texts.extend(expansion.search_queries)
+        
+        # Add keyword combinations
+        if expansion.keywords:
+            keyword_query = " ".join(expansion.keywords[:3])
+            texts.append(keyword_query)
+        
+        return texts
+    
     def _is_japanese(self, text: str) -> bool:
         """
         Check if text is primarily Japanese.
@@ -88,3 +197,4 @@ class QueryTranslator:
                 # Could be Chinese, but in this context likely Japanese
                 return True
         return False
+

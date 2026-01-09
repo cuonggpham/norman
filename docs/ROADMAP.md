@@ -35,11 +35,11 @@ Lộ trình phát triển hệ thống RAG cho văn bản pháp luật Nhật B�
 
 ---
 
-## 📋 Phase 2: Response Generation with API (Next)
+## ✅ Phase 2: Response Generation with API (Complete)
 
 ### 2.1 LLM Integration
-- [ ] Sử dụng retrieved chunks làm context
-- [ ] Generate answer với citations (OpenAI GPT-4o-mini)
+- [x] Sử dụng retrieved chunks làm context
+- [x] Generate answer với citations (OpenAI GPT-4o-mini)
 
 ### 2.2 Response Format with Highlighting
 ```json
@@ -57,17 +57,18 @@ Lộ trình phát triển hệ thống RAG cho văn bản pháp luật Nhật B�
 ```
 
 ### 2.3 API Endpoints
-- [ ] Implement `POST /api/search` - Vector search endpoint
-- [ ] Implement `POST /api/chat` - RAG chat với LLM
+- [x] Implement `POST /api/search` - Vector search endpoint
+- [x] Implement `POST /api/chat` - RAG chat với LLM
 
 ### 2.4 Tasks
-- [ ] Implement `app/services/llm.py` - LLM service with context
-- [ ] Implement `app/api/routes.py` - FastAPI routes
-- [ ] Setup FastAPI app với CORS, health check
+- [x] Implement `app/llm/` - LLM providers (`OpenAIProvider`, `BaseLLM`, prompts)
+- [x] Implement `app/pipelines/rag.py` - Full RAG pipeline với query translation
+- [x] Implement `app/api/routes.py` - FastAPI routes
+- [x] Setup FastAPI app với CORS, health check (`app/main.py`)
 
 ---
 
-## 📋 Phase 3: Reranking Integration
+## 📋 Phase 3: Reranking Integration (Next)
 
 ### 3.1 Reranker Options
 | Model | Type | Pros | Cons |
@@ -124,9 +125,10 @@ Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 |-----------|------------|--------|
 | Embedding | OpenAI text-embedding-3-large | ✅ Done |
 | Vector DB | Qdrant Cloud (Free Tier) | ✅ Done |
-| LLM | OpenAI GPT-4o-mini | 📋 Next |
-| Backend | FastAPI (Python) | � Next |
-| Reranker | TBD (Cohere/BGE) | ⬜ Phase 3 |
+| LLM | OpenAI GPT-4o-mini | ✅ Done |
+| Backend | FastAPI (Python) | ✅ Done |
+| Frontend | React + Vite | ✅ Done |
+| Reranker | TBD (Cohere/BGE) | 📋 Next |
 | Graph DB | Neo4j | ⬜ Future |
 
 ---
@@ -137,6 +139,6 @@ Query → Vector Search (top 50) → Rerank → Final Results (top 5)
 |-------|----------|--------|
 | Phase 0 | 1 day | ✅ Complete |
 | Phase 1 | 2 days | ✅ Complete |
-| Phase 2 | 3-5 days | 📋 Next |
-| Phase 3 | 2-3 days | ⬜ Pending |
+| Phase 2 | 3-5 days | ✅ Complete |
+| Phase 3 | 2-3 days | 📋 Next |
 | Phase 4 | 5-7 days | ⬜ Pending |

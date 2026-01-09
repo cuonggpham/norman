@@ -50,6 +50,7 @@ class RAGPipeline:
     # Default settings
     default_top_k: int = 5
     retrieval_multiplier: int = 3  # Retrieve more for reranking
+    min_score_threshold: float = 0.4  # Filter results below this score
     
     def search(
         self,
@@ -98,6 +99,8 @@ class RAGPipeline:
         query: str,
         top_k: int | None = None,
         filters: dict[str, Any] | None = None,
+        use_multi_query: bool = True,
+        auto_filter: bool = False,  # Disabled: Qdrant only has '労働' category
     ) -> ChatResponse:
         """
         Full RAG: retrieve + generate.
@@ -106,6 +109,8 @@ class RAGPipeline:
             query: User's question
             top_k: Number of sources to use
             filters: Metadata filters
+            use_multi_query: If True, use multi-query retrieval for better recall
+            auto_filter: If True, auto-detect category and add filters
             
         Returns:
             ChatResponse with answer and sources
@@ -113,26 +118,63 @@ class RAGPipeline:
         start_time = time.time()
         top_k = top_k or self.default_top_k
         
-        # 0. Translate query if translator available
-        search_query = self._translate_query(query)
+        # 0a. Auto-detect category and merge with user filters
+        final_filters = dict(filters) if filters else {}
+        if auto_filter:
+            from app.llm.query_analyzer import get_query_analyzer
+            analyzer = get_query_analyzer()
+            analysis = analyzer.analyze(query)
+            if analysis.detected_category and analysis.confidence >= 0.6:
+                logger.info(f"Auto-detected category: {analysis.detected_category} (confidence: {analysis.confidence:.2f})")
+                # Only add category filter if user didn't specify
+                if "category" not in final_filters:
+                    final_filters["category"] = analysis.detected_category
         
-        # 1. Retrieve (get more if reranking)
-        retrieve_k = top_k * self.retrieval_multiplier if self.reranker else top_k
-        
-        query_vector = self.embedding.embed(search_query)
-        raw_results = self.vector_store.search(
-            query_vector=query_vector,
-            top_k=retrieve_k,
-            filters=filters,
-        )
-        
-        # 2. Rerank (if available)
-        if self.reranker:
-            raw_results = self.reranker.rerank(query, raw_results, top_k)
+        # 0b. Get search queries (multi-query or single)
+        if use_multi_query and self.translator and hasattr(self.translator, 'get_all_search_texts'):
+            search_texts = self.translator.get_all_search_texts(query)
+            logger.info(f"Multi-query retrieval with {len(search_texts)} queries")
         else:
-            raw_results = raw_results[:top_k]
+            search_query = self._translate_query(query)
+            search_texts = [search_query]
         
-        # 3. Build context from results
+        # 1. Retrieve with multiple queries and deduplicate
+        retrieve_k = top_k * self.retrieval_multiplier if self.reranker else top_k * 2
+        
+        all_results = {}  # chunk_id -> result (for deduplication)
+        
+        for search_text in search_texts:
+            query_vector = self.embedding.embed(search_text)
+            results = self.vector_store.search(
+                query_vector=query_vector,
+                top_k=retrieve_k,
+                filters=final_filters if final_filters else None,
+            )
+            
+            # Merge results, keeping highest score for each chunk
+            for r in results:
+                chunk_id = r.get("id", str(r.get("payload", {}).get("chunk_id", "")))
+                if chunk_id not in all_results or r.get("score", 0) > all_results[chunk_id].get("score", 0):
+                    all_results[chunk_id] = r
+        
+        # Sort by score and take top results
+        raw_results = sorted(all_results.values(), key=lambda x: x.get("score", 0), reverse=True)
+        
+        # 2. Filter by score threshold
+        filtered_results = [r for r in raw_results if r.get("score", 0) >= self.min_score_threshold]
+        
+        if not filtered_results:
+            logger.warning(f"No results above threshold {self.min_score_threshold} for: {query}")
+            # Fallback: use top 3 results anyway
+            filtered_results = raw_results[:3]
+        
+        # 3. Rerank (if available)
+        if self.reranker:
+            raw_results = self.reranker.rerank(query, filtered_results, top_k)
+        else:
+            raw_results = filtered_results[:top_k]
+        
+        # 4. Build context from results
         context = self._build_context(raw_results)
         
         # 4. Generate response
