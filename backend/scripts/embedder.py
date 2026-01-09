@@ -22,10 +22,10 @@ from tqdm import tqdm
 # Load environment variables
 load_dotenv()
 
-# Directories
-BASE_DIR = Path(__file__).parent.parent
-CHUNKS_DIR = BASE_DIR / "data" / "chunks"
-EMBEDDINGS_DIR = BASE_DIR / "data" / "embeddings"
+# Directories - use project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # scripts -> backend -> norman
+CHUNKS_DIR = PROJECT_ROOT / "data" / "chunks"
+EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "embeddings"
 
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

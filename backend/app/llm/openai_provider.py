@@ -22,7 +22,7 @@ class OpenAIProvider(BaseLLM):
         ])
     """
     
-    DEFAULT_MODEL = "gpt-4o-mini"
+    DEFAULT_MODEL = "gpt-4.1-mini"
     DEFAULT_TEMPERATURE = 0.3  # Lower for more consistent legal responses
     DEFAULT_MAX_TOKENS = 2048
     

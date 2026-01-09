@@ -29,8 +29,9 @@ from app.db.qdrant import (
 )
 
 
-# Paths
-EMBEDDINGS_DIR = Path("data/embeddings")
+# Paths - use project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # scripts -> backend -> norman
+EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "embeddings"
 CHUNKS_FILE = EMBEDDINGS_DIR / "_all_chunks.json"
 EMBEDDINGS_FILE = EMBEDDINGS_DIR / "_all_embeddings.npy"
 CONFIG_FILE = EMBEDDINGS_DIR / "_config.json"
@@ -79,6 +80,7 @@ def prepare_payloads(chunks: list[dict]) -> list[dict]:
             # Law info
             "law_title": meta.get("law_title", ""),
             "law_abbrev": meta.get("law_abbrev", ""),
+            "law_type": meta.get("law_type", ""),  # Act, CabinetOrder, etc.
             "category": meta.get("category", ""),
             # Structure
             "chapter_num": meta.get("chapter_num", ""),

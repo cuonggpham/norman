@@ -15,10 +15,10 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 
 
-# Directories
-BASE_DIR = Path(__file__).parent.parent
-PROCESSED_DIR = BASE_DIR / "data" / "processed"
-CHUNKS_DIR = BASE_DIR / "data" / "chunks"
+# Directories - use project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # scripts -> backend -> norman
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+CHUNKS_DIR = PROJECT_ROOT / "data" / "chunks"
 
 
 @dataclass
@@ -27,6 +27,7 @@ class ChunkMetadata:
     law_id: str
     law_title: str
     law_abbrev: Optional[str]
+    law_type: str  # "Act", "CabinetOrder", etc.
     category: str
     chapter_num: Optional[str]
     chapter_title: Optional[str]
@@ -119,6 +120,7 @@ def chunk_article(
     law_id: str,
     law_title: str,
     law_abbrev: Optional[str],
+    law_type: str,
     category: str,
     chapter_num: Optional[str],
     chapter_title: Optional[str],
@@ -161,6 +163,7 @@ def chunk_article(
             law_id=law_id,
             law_title=law_title,
             law_abbrev=law_abbrev,
+            law_type=law_type,
             category=category,
             chapter_num=chapter_num,
             chapter_title=chapter_title,
@@ -200,6 +203,7 @@ def chunk_law_file(law_data: Dict[str, Any]) -> List[Chunk]:
     law_id = law_info.get("law_id", "unknown")
     law_title = revision_info.get("law_title", "")
     law_abbrev = revision_info.get("abbrev")
+    law_type = law_info.get("law_type", "Unknown")  # Act, CabinetOrder, etc.
     category = revision_info.get("category", "")
     
     law_full_text = law_data.get("law_full_text", {}) or {}
@@ -217,6 +221,7 @@ def chunk_law_file(law_data: Dict[str, Any]) -> List[Chunk]:
                 law_id=law_id,
                 law_title=law_title,
                 law_abbrev=law_abbrev,
+                law_type=law_type,
                 category=category,
                 chapter_num=chapter_num,
                 chapter_title=chapter_title,
@@ -234,6 +239,7 @@ def chunk_law_file(law_data: Dict[str, Any]) -> List[Chunk]:
                 law_id=law_id,
                 law_title=law_title,
                 law_abbrev=law_abbrev,
+                law_type=law_type,
                 category=category,
                 chapter_num=None,
                 chapter_title="附則",
