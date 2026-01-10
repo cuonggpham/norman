@@ -1,44 +1,76 @@
-.spinner {
+.loading-spinner {
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
-.spinner__circle {
-    border: 2px solid var(--color-border);
+/* AI-themed dots animation */
+.loading-spinner__dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.loading-spinner__dots span {
+    display: block;
+    width: 10px;
+    height: 10px;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    animation: dots-pulse 1.4s ease-in-out infinite;
+}
+
+.loading-spinner__dots span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.loading-spinner__dots span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.loading-spinner__dots span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+/* Size variants */
+.loading-spinner--sm .loading-spinner__dots span {
+    width: 6px;
+    height: 6px;
+}
+
+.loading-spinner--md .loading-spinner__dots span {
+    width: 10px;
+    height: 10px;
+}
+
+.loading-spinner--lg .loading-spinner__dots span {
+    width: 14px;
+    height: 14px;
+}
+
+/* Classic spinner fallback */
+.loading-spinner__circle {
+    border: 3px solid var(--glass-border);
     border-top-color: var(--color-primary);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
 
-/* Size variants */
-.spinner--sm .spinner__circle {
+.loading-spinner--sm .loading-spinner__circle {
     width: 16px;
     height: 16px;
+    border-width: 2px;
 }
 
-.spinner--md .spinner__circle {
+.loading-spinner--md .loading-spinner__circle {
     width: 24px;
     height: 24px;
 }
 
-.spinner--lg .spinner__circle {
-    width: 40px;
-    height: 40px;
-    border-width: 3px;
-}
-
-/* Screen reader only */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+.loading-spinner--lg .loading-spinner__circle {
+    width: 36px;
+    height: 36px;
+    border-width: 4px;
 }
 
 @keyframes spin {
@@ -47,11 +79,22 @@
     }
 }
 
-/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    .spinner__circle {
+
+    .loading-spinner__dots span,
+    .loading-spinner__circle {
         animation: none;
-        border-top-color: var(--color-primary);
-        border-right-color: var(--color-primary);
+    }
+
+    .loading-spinner__dots span {
+        opacity: 0.5;
+    }
+
+    .loading-spinner__dots span:nth-child(2) {
+        opacity: 0.75;
+    }
+
+    .loading-spinner__dots span:nth-child(3) {
+        opacity: 1;
     }
 }

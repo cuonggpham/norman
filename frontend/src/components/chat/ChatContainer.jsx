@@ -69,7 +69,17 @@ export default function ChatContainer() {
             <div className="chat-container__messages">
                 {messages.length === 0 ? (
                     <div className="chat-container__welcome">
-                        <div className="chat-container__welcome-icon">⚖️</div>
+                        <div className="chat-container__welcome-glow" />
+                        <div className="chat-container__welcome-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 3v18" />
+                                <path d="M3 7h18" />
+                                <path d="M3 7l3 10h3" />
+                                <path d="M15 17h3l3-10" />
+                                <circle cx="6" cy="17" r="3" />
+                                <circle cx="18" cy="17" r="3" />
+                            </svg>
+                        </div>
                         <h2 className="chat-container__welcome-title">
                             Xin chào! Tôi là Norman
                         </h2>
@@ -78,13 +88,25 @@ export default function ChatContainer() {
                             tôi sẽ trả lời và trích dẫn các điều luật liên quan.
                         </p>
                         <div className="chat-container__examples">
-                            <p className="chat-container__examples-label">Thử hỏi:</p>
+                            <p className="chat-container__examples-label">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                                Thử hỏi
+                            </p>
                             {EXAMPLE_PROMPTS.map((prompt, idx) => (
                                 <button
                                     key={idx}
                                     className="chat-container__example-btn"
                                     onClick={() => handleExampleClick(prompt)}
                                 >
+                                    <span className="chat-container__example-icon">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                            <path d="M12 17h.01" />
+                                        </svg>
+                                    </span>
                                     {prompt}
                                 </button>
                             ))}
