@@ -2,14 +2,15 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(12px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     border-bottom: 1px solid var(--color-border);
     padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .header__content {
-    max-width: 900px;
+    max-width: 800px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -23,27 +24,51 @@
 }
 
 .header__logo {
-    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--color-primary);
+    border-radius: var(--radius-lg);
+    color: white;
 }
 
 .header__title {
     font-size: 1.25rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-weight: 600;
+    color: var(--color-text);
 }
 
 .header__subtitle {
     color: var(--color-text-muted);
-    font-size: 0.75rem;
-    padding-left: var(--spacing-sm);
+    font-size: 0.8rem;
+    padding-left: var(--spacing-md);
     border-left: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+/* Status indicator */
+.header__status {
+    width: 6px;
+    height: 6px;
+    background: var(--color-success);
+    border-radius: var(--radius-full);
 }
 
 @media (max-width: 480px) {
     .header__subtitle {
         display: none;
+    }
+
+    .header__logo {
+        width: 32px;
+        height: 32px;
+    }
+
+    .header__title {
+        font-size: 1.1rem;
     }
 }
