@@ -5,6 +5,7 @@ Provides factory functions for services and pipelines.
 Uses lru_cache for singleton behavior.
 """
 
+import logging
 from functools import lru_cache
 from typing import Any
 
@@ -15,6 +16,8 @@ from app.llm.query_translator import QueryTranslator
 from app.services.embedding import EmbeddingService
 from app.db.qdrant import get_qdrant_client, search as qdrant_search, get_collection_name
 from app.pipelines.rag import RAGPipeline
+
+logger = logging.getLogger(__name__)
 
 
 class QdrantVectorStore:
@@ -103,6 +106,27 @@ def get_query_translator() -> QueryTranslator:
 
 
 @lru_cache
+def get_reranker():
+    """
+    Get cached BGE reranker (optional).
+    
+    Returns None if loading fails (allows graceful degradation).
+    """
+    settings = get_settings()
+    if not getattr(settings, 'reranker_enabled', True):
+        logger.info("Reranker disabled by config")
+        return None
+    
+    try:
+        from app.services.reranker import BGEReranker
+        logger.info("Loading BGE reranker...")
+        return BGEReranker()
+    except Exception as e:
+        logger.warning(f"Failed to load reranker, continuing without: {e}")
+        return None
+
+
+@lru_cache
 def get_rag_pipeline() -> RAGPipeline:
     """
     Get cached RAG pipeline.
@@ -113,7 +137,7 @@ def get_rag_pipeline() -> RAGPipeline:
         embedding=get_embedding_service(),
         vector_store=get_vector_store(),
         llm=get_llm_provider(),
-        reranker=None,  # Add in Phase 3
+        reranker=get_reranker(),  # BGE reranker (Phase 3)
         translator=get_query_translator(),  # Vietnamese → Japanese
     )
 
@@ -122,3 +146,4 @@ def get_rag_pipeline() -> RAGPipeline:
 def get_pipeline() -> RAGPipeline:
     """Dependency for FastAPI routes."""
     return get_rag_pipeline()
+

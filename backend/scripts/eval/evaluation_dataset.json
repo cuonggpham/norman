@@ -1,0 +1,111 @@
+{
+    "description": "RAGAS evaluation dataset for Japanese Legal RAG system",
+    "version": "1.0",
+    "samples": [
+        {
+            "question": "Thời gian làm việc tối đa trong một ngày là bao nhiêu giờ?",
+            "question_ja": "1日の最大労働時間は何時間ですか？",
+            "ground_truth": "Theo Điều 32 Luật Tiêu chuẩn Lao động Nhật Bản, thời gian làm việc tối đa là 8 giờ mỗi ngày và 40 giờ mỗi tuần (không bao gồm thời gian nghỉ giải lao).",
+            "expected_law": "労働基準法",
+            "expected_article": "第32条"
+        },
+        {
+            "question": "Thời gian nghỉ giữa ca làm việc là bao nhiêu?",
+            "question_ja": "休憩時間はどのくらいですか？",
+            "ground_truth": "Theo Điều 34 Luật Tiêu chuẩn Lao động, nếu làm việc trên 6 giờ phải có ít nhất 45 phút nghỉ, nếu làm việc trên 8 giờ phải có ít nhất 1 tiếng nghỉ.",
+            "expected_law": "労働基準法",
+            "expected_article": "第34条"
+        },
+        {
+            "question": "Quy định về làm thêm giờ như thế nào?",
+            "question_ja": "残業についての規定は何ですか？",
+            "ground_truth": "Theo Điều 36 Luật Tiêu chuẩn Lao động, để yêu cầu lao động làm thêm giờ ngoài giờ làm việc quy định, cần có thỏa thuận lao động-quản lý (hiệp định 36). Công ty phải trả lương tăng thêm ít nhất 25% cho giờ làm thêm.",
+            "expected_law": "労働基準法",
+            "expected_article": "第36条"
+        },
+        {
+            "question": "Lương tối thiểu được quy định như thế nào?",
+            "question_ja": "最低賃金はどのように規定されていますか？",
+            "ground_truth": "Theo Luật Lương Tối thiểu Nhật Bản, người sử dụng lao động phải trả lương ít nhất bằng mức lương tối thiểu do chính quyền địa phương hoặc trung ương quy định. Mức này được xem xét và điều chỉnh hàng năm.",
+            "expected_law": "最低賃金法",
+            "expected_article": "第4条"
+        },
+        {
+            "question": "Thời gian thử việc tối đa là bao lâu?",
+            "question_ja": "試用期間の最長期間はどのくらいですか？",
+            "ground_truth": "Luật Tiêu chuẩn Lao động Nhật Bản không quy định cụ thể thời gian thử việc tối đa, nhưng thực tế phổ biến là 3-6 tháng. Trong thời gian thử việc, người lao động vẫn được hưởng đầy đủ quyền lợi theo luật.",
+            "expected_law": "労働基準法",
+            "expected_article": ""
+        },
+        {
+            "question": "Nghỉ phép năm được tính như thế nào?",
+            "question_ja": "年次有給休暇はどのように計算されますか？",
+            "ground_truth": "Theo Điều 39 Luật Tiêu chuẩn Lao động, người lao động làm việc liên tục 6 tháng trở lên với tỷ lệ đi làm trên 80% được hưởng ít nhất 10 ngày nghỉ phép có lương. Số ngày tăng dần theo thâm niên, tối đa 20 ngày.",
+            "expected_law": "労働基準法",
+            "expected_article": "第39条"
+        },
+        {
+            "question": "Công ty có thể sa thải nhân viên ngay lập tức không?",
+            "question_ja": "会社は従業員を即時解雇できますか？",
+            "ground_truth": "Theo Điều 20 Luật Tiêu chuẩn Lao động, người sử dụng lao động phải thông báo trước ít nhất 30 ngày hoặc trả lương tương đương 30 ngày. Sa thải ngay lập tức chỉ được phép trong trường hợp có lý do chính đáng và được cơ quan lao động chấp thuận.",
+            "expected_law": "労働基準法",
+            "expected_article": "第20条"
+        },
+        {
+            "question": "Quy định về nghỉ thai sản như thế nào?",
+            "question_ja": "産前産後休業についての規定は何ですか？",
+            "ground_truth": "Theo Điều 65 Luật Tiêu chuẩn Lao động, phụ nữ mang thai được nghỉ 6 tuần trước sinh (8 tuần nếu đa thai) và bắt buộc nghỉ 8 tuần sau sinh (có thể làm việc sau 6 tuần nếu có chứng nhận bác sĩ).",
+            "expected_law": "労働基準法",
+            "expected_article": "第65条"
+        },
+        {
+            "question": "Độ tuổi lao động tối thiểu ở Nhật là bao nhiêu?",
+            "question_ja": "日本の最低労働年齢は何歳ですか？",
+            "ground_truth": "Theo Điều 56 Luật Tiêu chuẩn Lao động, cấm sử dụng lao động dưới 15 tuổi (tính đến cuối năm học). Trẻ từ 13-15 tuổi có thể làm công việc nhẹ ngoài giờ học nếu có sự chấp thuận của cơ quan lao động.",
+            "expected_law": "労働基準法",
+            "expected_article": "第56条"
+        },
+        {
+            "question": "Công ty phải trả lương làm đêm như thế nào?",
+            "question_ja": "深夜労働の賃金はどのように支払われますか？",
+            "ground_truth": "Theo Điều 37 Luật Tiêu chuẩn Lao động, làm việc từ 22:00 đến 5:00 được coi là làm đêm và phải được trả thêm ít nhất 25% lương cơ bản.",
+            "expected_law": "労働基準法",
+            "expected_article": "第37条"
+        },
+        {
+            "question": "Nghỉ tuần bắt buộc được quy định thế nào?",
+            "question_ja": "週休日についての規定は何ですか？",
+            "ground_truth": "Theo Điều 35 Luật Tiêu chuẩn Lao động, người sử dụng lao động phải cho người lao động nghỉ ít nhất 1 ngày mỗi tuần, hoặc 4 ngày trong khoảng thời gian 4 tuần.",
+            "expected_law": "労働基準法",
+            "expected_article": "第35条"
+        },
+        {
+            "question": "Hợp đồng lao động cần có những nội dung gì?",
+            "question_ja": "労働契約にはどのような内容が必要ですか？",
+            "ground_truth": "Theo Điều 15 Luật Tiêu chuẩn Lao động, hợp đồng lao động phải ghi rõ: thời hạn hợp đồng, nơi làm việc, nội dung công việc, thời gian làm việc, tiền lương, điều kiện nghỉ việc. Các điều khoản này phải được thông báo bằng văn bản.",
+            "expected_law": "労働基準法",
+            "expected_article": "第15条"
+        },
+        {
+            "question": "Quy định về an toàn lao động như thế nào?",
+            "question_ja": "労働安全についての規定は何ですか？",
+            "ground_truth": "Theo Luật An toàn và Vệ sinh Lao động, người sử dụng lao động có nghĩa vụ đảm bảo an toàn và sức khỏe cho người lao động, bao gồm: phòng chống tai nạn, kiểm tra sức khỏe định kỳ, và đào tạo an toàn lao động.",
+            "expected_law": "労働安全衛生法",
+            "expected_article": "第3条"
+        },
+        {
+            "question": "Bảo hiểm thất nghiệp được quy định thế nào?",
+            "question_ja": "失業保険についての規定は何ですか？",
+            "ground_truth": "Theo Luật Bảo hiểm Việc làm, người lao động sau khi nghỉ việc được nhận trợ cấp thất nghiệp nếu đã đóng bảo hiểm đủ thời gian quy định. Thời gian và mức trợ cấp phụ thuộc vào tuổi, thâm niên làm việc và lý do nghỉ việc.",
+            "expected_law": "雇用保険法",
+            "expected_article": ""
+        },
+        {
+            "question": "Làm thêm quá 45 giờ một tháng có hợp pháp không?",
+            "question_ja": "月45時間以上の残業は合法ですか？",
+            "ground_truth": "Theo sửa đổi Luật Tiêu chuẩn Lao động năm 2018, giới hạn làm thêm giờ tiêu chuẩn là 45 giờ/tháng và 360 giờ/năm. Trong các trường hợp đặc biệt có thể tăng lên nhưng không quá 100 giờ/tháng và trung bình 80 giờ trong 2-6 tháng.",
+            "expected_law": "労働基準法",
+            "expected_article": "第36条"
+        }
+    ]
+}

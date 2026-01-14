@@ -48,9 +48,9 @@ class RAGPipeline:
     translator: QueryTranslator | None = None  # Cross-lingual translation
     
     # Default settings
-    default_top_k: int = 5
-    retrieval_multiplier: int = 3  # Retrieve more for reranking
-    min_score_threshold: float = 0.4  # Filter results below this score
+    default_top_k: int = 10  # Increased for better context recall with reranker
+    retrieval_multiplier: int = 4  # Increased from 3 for larger rerank pool
+    min_score_threshold: float = 0.25  # Lowered for broader coverage
     
     def search(
         self,
