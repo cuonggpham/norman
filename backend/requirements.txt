@@ -33,3 +33,8 @@ FlagEmbedding>=1.2.0
 # Evaluation
 ragas>=0.4.0
 datasets>=2.14.0
+
+# LangGraph Agent Framework
+langchain>=0.3.0
+langchain-openai>=0.3.0
+langgraph>=0.2.0

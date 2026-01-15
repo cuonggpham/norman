@@ -9,6 +9,7 @@ from app.models.schemas import (
     SearchResponse,
     ChatQuery,
     ChatResponse,
+    SourceDocument,
     HealthResponse,
 )
 
@@ -68,13 +69,30 @@ async def chat(
     
     Retrieves relevant documents and generates an answer in Vietnamese
     with Japanese legal term annotations and citations.
+    
+    Set use_agent=true for LangGraph agent with self-correction loop.
     """
     try:
-        response = pipeline.chat(
-            query=query.query,
-            top_k=query.top_k,
-            filters=query.filters,
-        )
-        return response
+        if query.use_agent:
+            # Use LangGraph agent (with self-correction)
+            from app.agents.graph import get_legal_rag_agent
+            agent = get_legal_rag_agent()
+            result = agent.chat(query.query)
+            return ChatResponse(
+                answer=result["answer"],
+                sources=[
+                    SourceDocument(**s) for s in result.get("sources", [])
+                ],
+                query=result["query"],
+                processing_time_ms=result["processing_time_ms"],
+            )
+        else:
+            # Use RAGPipeline (default)
+            response = pipeline.chat(
+                query=query.query,
+                top_k=query.top_k,
+                filters=query.filters,
+            )
+            return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

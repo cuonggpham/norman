@@ -27,12 +27,14 @@ class ChatQuery(BaseModel):
     query: str = Field(..., description="Question in Japanese or Vietnamese")
     top_k: int = Field(default=5, ge=1, le=20, description="Number of sources to use")
     filters: Optional[dict] = Field(default=None, description="Metadata filters")
+    use_agent: bool = Field(default=False, description="Use LangGraph agent with self-correction")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "query": "残業代の計算方法を教えてください",
-                "top_k": 5
+                "top_k": 5,
+                "use_agent": False
             }
         }
 
