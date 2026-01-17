@@ -5,6 +5,7 @@ Provides functions for connecting to Qdrant Cloud,
 managing collections, and performing vector operations.
 """
 
+import logging
 import os
 from typing import Any, Optional
 
@@ -18,10 +19,29 @@ from qdrant_client.models import (
     FieldCondition,
     MatchValue,
 )
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+)
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 
+# Retry decorator for Qdrant operations
+retry_qdrant = retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=4),
+    retry=retry_if_exception_type((TimeoutError, ConnectionError, OSError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+
+
+@retry_qdrant
 def get_qdrant_client() -> QdrantClient:
     """
     Get Qdrant Cloud client instance.
@@ -122,6 +142,7 @@ def upsert_vectors(
     return total
 
 
+@retry_qdrant
 def search(
     client: QdrantClient,
     query_vector: list[float],

@@ -1,11 +1,11 @@
 {
   "overall_scores": {
-    "context_recall": 0.7,
-    "context_precision": 0.79527777774972,
-    "faithfulness": 0.71,
-    "answer_relevancy": 0.4145302425453689
+    "context_recall": 0.7333333333333333,
+    "context_precision": 0.7050925925661659,
+    "faithfulness": 0.8169352869352869,
+    "answer_relevancy": 0.5201613247933092
   },
-  "dataset_size": 5,
+  "dataset_size": 15,
   "raw_results": [
     {
       "user_input": "Thời gian làm việc tối đa trong một ngày là bao nhiêu giờ?",
@@ -16,12 +16,12 @@
         "【労働基準法 第三十二条】\n使用者は、一週間の各日については、労働者に、休憩時間を除き一日について八時間を超えて、労働させてはならない。",
         "【船員法 第六十五条の二】\n第六十四条の二第一項の規定により第六十条第一項の規定又は第七十二条の国土交通省令の規定による労働時間の制限を超えて海員を作業に従事させる場合であつても、海員の一日当たりの労働時間及び一週間当たりの労働時間は、第六十条第一項の規定及び第七十二条の国土交通省令の規定による労働時間並びに前項の規定による作業に従事する労働時間を含め、それぞれ十四時間及び七十二時間を限度とする。"
       ],
-      "response": "Thời gian làm việc tối đa trong một ngày là 8 giờ, không bao gồm thời gian nghỉ ngơi.\n\n**Căn cứ pháp lý:**\n- 労働基準法（労働時間）第32条第2項: \"使用者は、一週間の各日については、労働者に、休憩時間を除き一日について八時間を超えて、労働させてはならない。\" (Người sử dụng lao động không được phép cho người lao động làm việc quá 8 giờ trong một ngày, không bao gồm thời gian nghỉ ngơi.)",
+      "response": "### Trả lời\nThời gian làm việc tối đa trong một ngày là **8 giờ**, không bao gồm thời gian nghỉ. \n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 32 [第三十二条], Khoản 2**: \"Sử dụng lao động không được phép làm việc quá **8 giờ/ngày**.\"\n\n### Lưu ý\nTrong một số trường hợp đặc biệt, nếu có thỏa thuận với công đoàn hoặc đại diện lao động, thời gian làm việc có thể được điều chỉnh nhưng không vượt quá quy định chung.",
       "reference": "Theo Điều 32 Luật Tiêu chuẩn Lao động Nhật Bản, thời gian làm việc tối đa là 8 giờ mỗi ngày và 40 giờ mỗi tuần (không bao gồm thời gian nghỉ giải lao).",
       "context_recall": 1.0,
-      "context_precision": 0.8055555555287036,
+      "context_precision": 0.4166666666458333,
       "faithfulness": 0.8,
-      "answer_relevancy": 0.6096823060372262
+      "answer_relevancy": 0.6090850668067721
     },
     {
       "user_input": "Thời gian nghỉ giữa ca làm việc là bao nhiêu?",
@@ -29,15 +29,15 @@
         "【労働基準法 第三十四条】\n使用者は、労働時間が六時間を超える場合においては少くとも四十五分、八時間を超える場合においては少くとも一時間の休憩時間を労働時間の途中に与えなければならない。",
         "【労働基準法 第三十二条】\n使用者は、一週間の各日については、労働者に、休憩時間を除き一日について八時間を超えて、労働させてはならない。",
         "【労働基準法 第三十二条】\n使用者は、労働者に、休憩時間を除き一週間について四十時間を超えて、労働させてはならない。",
-        "【労働基準法 第三十五条】\n前項の規定は、四週間を通じ四日以上の休日を与える使用者については適用しない。",
-        "【労働基準法 第百三十一条】\n命令で定める規模以下の事業又は命令で定める業種の事業に係る第三十二条第一項（第六十条第二項の規定により読み替えて適用する場合を除く。）の規定の適用については、平成九年三月三十一日までの間は、第三十二条第一項中「四十時間」とあるのは、「四十時間を超え四十四時間以下の範囲内において命令で定める時間」とする。"
+        "【労働基準法 第百三十一条】\n命令で定める規模以下の事業又は命令で定める業種の事業に係る第三十二条第一項（第六十条第二項の規定により読み替えて適用する場合を除く。）の規定の適用については、平成九年三月三十一日までの間は、第三十二条第一項中「四十時間」とあるのは、「四十時間を超え四十四時間以下の範囲内において命令で定める時間」とする。",
+        "【労働基準法 第三十六条】\n前項の限度時間は、一箇月について四十五時間及び一年について三百六十時間（第三十二条の四第一項第二号の対象期間として三箇月を超える期間を定めて同条の規定により労働させる場合にあつては、一箇月について四十二時間及び一年について三百二十時間）とする。"
       ],
-      "response": "Thời gian nghỉ giữa ca làm việc là ít nhất 45 phút nếu thời gian làm việc vượt quá 6 giờ, và ít nhất 1 giờ nếu thời gian làm việc vượt quá 8 giờ.\n\n**Căn cứ pháp lý:**\n- 労働基準法（労働基準法） 第三十四条: 使用者は、労働時間が六時間を超える場合においては少くとも四十五分、八時間を超える場合においては少くとも一時間の休憩時間を労働時間の途中に与えなければならない。",
+      "response": "### Trả lời\nThời gian nghỉ giữa ca làm việc theo quy định của Luật Tiêu chuẩn Lao động [労働基準法] là như sau: Nếu thời gian làm việc vượt quá **6 giờ**, người sử dụng lao động phải cung cấp ít nhất **45 phút** nghỉ. Nếu thời gian làm việc vượt quá **8 giờ**, thì phải cung cấp ít nhất **1 giờ** nghỉ.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 34 [第三十四条]**: \"Người sử dụng lao động phải cung cấp ít nhất **45 phút** nghỉ nếu thời gian làm việc vượt quá **6 giờ**, và ít nhất **1 giờ** nghỉ nếu thời gian làm việc vượt quá **8 giờ**.\"\n\n### Lưu ý\nThời gian nghỉ này là bắt buộc và phải được thực hiện trong thời gian làm việc.",
       "reference": "Theo Điều 34 Luật Tiêu chuẩn Lao động, nếu làm việc trên 6 giờ phải có ít nhất 45 phút nghỉ, nếu làm việc trên 8 giờ phải có ít nhất 1 tiếng nghỉ.",
       "context_recall": 1.0,
       "context_precision": 0.99999999995,
-      "faithfulness": 1.0,
-      "answer_relevancy": 0.4322529633963015
+      "faithfulness": 0.8571428571428571,
+      "answer_relevancy": 0.4579959953702936
     },
     {
       "user_input": "Quy định về làm thêm giờ như thế nào?",
@@ -48,12 +48,12 @@
         "【労働基準法 第三十七条】\n使用者が、午後十時から午前五時まで（厚生労働大臣が必要であると認める場合においては、その定める地域又は期間については午後十一時から午前六時まで）の間において労働させた場合においては、その時間の労働については、通常の労働時間の賃金の計算額の二割五分以上の率で計算した割増賃金を支払わなければならない。",
         "【労働基準法 第百四十一条】\n前項の場合において、第三十六条第一項の協定に、同条第二項各号に掲げるもののほか、当該事業場における通常予見することのできない業務量の大幅な増加等に伴い臨時的に前項の規定により読み替えて適用する同条第三項の厚生労働省令で定める時間を超えて労働させる必要がある場合において、同条第二項第四号に関して協定した時間を超えて労働させることができる時間（同号に関して協定した時間を含め、同条第五項に定める時間及び月数並びに労働者の健康及び福祉を勘案して厚生労働省令で定める時間を超えない範囲内に限る。）その他厚生労働省令で定める事項を定めることができる。"
       ],
-      "response": "Quy định về làm thêm giờ được quy định trong Luật Lao động Nhật Bản như sau: Người sử dụng lao động (使用者, shiyōsha) có thể yêu cầu lao động (労働者, rōdōsha) làm thêm giờ trong phạm vi thời gian làm thêm được dự đoán trước, không vượt quá giới hạn thời gian quy định. Cụ thể, thời gian làm thêm không được vượt quá thời gian giới hạn mà luật đã quy định, và phải được tính toán dựa trên khối lượng công việc và các yếu tố khác.\n\n**Căn cứ pháp lý:**\n- Luật Lao động (労働基準法, Rōdō Kijun Hō) Điều 36: \"Thời gian làm thêm giờ phải trong phạm vi thời gian làm thêm được dự đoán trước và không vượt quá giới hạn thời gian quy định.\"",
+      "response": "### Trả lời\nQuy định về làm thêm giờ tại Nhật Bản được quy định trong Luật Tiêu chuẩn Lao động [労働基準法]. Theo đó, người sử dụng lao động có thể yêu cầu lao động làm thêm giờ, nhưng phải tuân thủ các giới hạn nhất định. Cụ thể, thời gian làm thêm giờ không được vượt quá giới hạn mà pháp luật quy định, và phải nằm trong phạm vi thời gian làm thêm giờ có thể dự đoán được.\n\n1. **Giới hạn thời gian làm thêm**: Theo Điều 36 [第三十六条], Khoản 3, người sử dụng lao động chỉ có thể yêu cầu làm thêm giờ trong phạm vi thời gian làm thêm mà có thể dự đoán được, và không được vượt quá giới hạn thời gian quy định.\n\n2. **Thời gian làm việc tối đa**: Theo Điều 32 [第三十二条], Khoản 2, người sử dụng lao động không được yêu cầu lao động làm việc quá **8 giờ/ngày** (không tính thời gian nghỉ).\n\n3. **Tiền lương làm thêm giờ**: Theo Điều 37 [第三十七条], người sử dụng lao động phải trả tiền lương làm thêm giờ với mức tối thiểu là **25%** so với mức lương bình thường cho những giờ làm thêm trong ngày. Nếu tổng số giờ làm thêm trong tháng vượt quá **60 giờ**, mức lương cho những giờ làm thêm vượt quá này phải là **50%** so với mức lương bình thường.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 36 [第三十六条], Khoản 3**: \"Thời gian làm thêm giờ không được vượt quá giới hạn thời gian quy định và phải nằm trong phạm vi thời gian làm thêm có thể dự đoán được.\"\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 32 [第三十二条], Khoản 2**: \"Người sử dụng lao động không được yêu cầu lao động làm việc quá 8 giờ/ngày.\"\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 37 [第三十七条]**: \"Phải trả tiền lương làm thêm giờ với mức tối thiểu là 25% cho những giờ làm thêm trong ngày và 50% cho những giờ làm thêm vượt quá 60 giờ trong tháng.\"\n\n### Lưu ý\nNgười sử dụng lao động cần phải có thỏa thuận với người lao động về việc làm thêm giờ và phải tuân thủ các quy định liên quan đến sức khỏe và phúc lợi của người lao động.",
       "reference": "Theo Điều 36 Luật Tiêu chuẩn Lao động, để yêu cầu lao động làm thêm giờ ngoài giờ làm việc quy định, cần có thỏa thuận lao động-quản lý (hiệp định 36). Công ty phải trả lương tăng thêm ít nhất 25% cho giờ làm thêm.",
       "context_recall": 1.0,
-      "context_precision": 0.8041666666465626,
-      "faithfulness": 1.0,
-      "answer_relevancy": 0.5321049531251237
+      "context_precision": 0.99999999998,
+      "faithfulness": 0.9230769230769231,
+      "answer_relevancy": 0.5298429064780686
     },
     {
       "user_input": "Lương tối thiểu được quy định như thế nào?",
@@ -64,34 +64,195 @@
         "【労働基準法 第十二条】\n日日雇い入れられる者については、その従事する事業又は職業について、厚生労働大臣の定める金額を平均賃金とする。",
         "【国民年金法 第九十条の二】\n第一項第一号、第二項第一号及び第三項第一号に規定する所得の範囲及びその額の計算方法は、政令で定める。"
       ],
-      "response": "Lương tối thiểu được quy định theo Luật Lương tối thiểu (最低賃金法, Saitei Chingin Hō) và được áp dụng theo các quy định trong Luật Lao động (労働基準法, Rōdō Kijun Hō). Cụ thể, Điều 28 của Luật Lao động quy định rằng mức lương tối thiểu phải tuân theo quy định của Luật Lương tối thiểu.\n\n**Căn cứ pháp lý:**\n- Luật Lao động Điều 28: \"Về mức lương tối thiểu, phải tuân theo quy định của Luật Lương tối thiểu (昭和三十四年法律第百三十七号).\"",
+      "response": "### Trả lời\nLương tối thiểu tại Nhật Bản được quy định theo Luật Tiêu chuẩn Lao động [労働基準法] và Luật về Lương Tối Thiểu [最低賃金法]. Cụ thể, Điều 28 [第二十八条] của Luật Tiêu chuẩn Lao động quy định rằng mức lương tối thiểu phải tuân theo quy định của Luật về Lương Tối Thiểu. Tương tự, Điều 59 [第五十九条] của Luật về Thuyền viên [船員法] cũng chỉ rõ rằng mức lương và các khoản thưởng tối thiểu cũng phải tuân theo quy định của Luật về Lương Tối Thiểu.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 28 [第二十八条]**: \"Về mức lương tối thiểu, phải tuân theo quy định của Luật về Lương Tối Thiểu (昭和三十四年法律第百三十七号).\"\n- **Luật về Thuyền viên [船員法] Điều 59 [第五十九条]**: \"Về mức lương và các khoản thưởng tối thiểu, phải tuân theo quy định của Luật về Lương Tối Thiểu (昭和三十四年法律第百三十七号).\"\n\n### Lưu ý\nLương tối thiểu có thể khác nhau tùy theo từng ngành nghề và khu vực, và các quy định cụ thể sẽ được xác định bởi các cơ quan có thẩm quyền theo quy định của Luật về Lương Tối Thiểu.",
       "reference": "Theo Luật Lương Tối thiểu Nhật Bản, người sử dụng lao động phải trả lương ít nhất bằng mức lương tối thiểu do chính quyền địa phương hoặc trung ương quy định. Mức này được xem xét và điều chỉnh hàng năm.",
       "context_recall": 0.5,
-      "context_precision": 0.999999999975,
-      "faithfulness": 0.75,
-      "answer_relevancy": 0.49861099016819327
+      "context_precision": 0.9166666666361111,
+      "faithfulness": 0.7142857142857143,
+      "answer_relevancy": 0.4454790163429316
     },
     {
-      "user_input": "Thời gian thử việc tối đa là bao lâu?",
+      "user_input": "Thông báo sa thải trước bao nhiêu ngày?",
       "retrieved_contexts": [
-        "【雇用保険法 第八条】\n第四十条第一項の規定の適用については、当分の間、同項中「三十日」とあるのは、「四十日」とする。",
-        "【労働基準法 第百四十三条】\n第百九条の規定の適用については、当分の間、同条中「五年間」とあるのは、「三年間」とする。",
-        "【労働基準法 第百四十三条】\n第百十四条の規定の適用については、当分の間、同条ただし書中「五年」とあるのは、「三年」とする。",
-        "【雇用保険法 第五条】\n前項の場合において、所定給付日数を超えて基本手当を支給する日数は、六十日（所定給付日数が第二十三条第一項第二号イ又は第三号イに該当する受給資格者にあつては、三十日）を限度とするものとする。",
-        "【労働基準法 第百四十条】\n前項の規定にかかわらず、同項に規定する業務については、令和六年三月三十一日（同日及びその翌日を含む期間を定めている第三十六条第一項の協定に関しては、当該協定に定める期間の初日から起算して一年を経過する日）までの間、同条第二項第四号中「一箇月及び」とあるのは、「一日を超え三箇月以内の範囲で前項の協定をする使用者及び労働組合若しくは労働者の過半数を代表する者が定める期間並びに」とし、同条第三項から第五項まで及び第六項（第二号及び第三号に係る部分に限る。）の規定は適用しない。"
+        "【生活保護法 第四十五条】\n前項の規定による処分に係る行政手続法第十五条第一項又は第三十条の通知は、聴聞の期日又は弁明を記載した書面の提出期限（口頭による弁明の機会の付与を行う場合には、その日時）の十四日前までにしなければならない。",
+        "【旅館業法 第九条】\n第八条の規定による処分に係る行政手続法（平成五年法律第八十八号）第十五条第一項又は第三十条の通知は、聴聞の期日又は弁明を記載した書面の提出期限（口頭による弁明の機会の付与を行う場合には、その日時）の一週間前までにしなければならない。",
+        "【船員法 第四十四条の三】\n船舶所有者は、予備船員を解雇しようとする場合においては、少なくとも三十日前にその予告をしなければならない。 三十日前に予告をしない船舶所有者は、一箇月分の給料の額と同額の予告手当を支払わなければならない。 但し、天災事変その他やむを得ない事由のために事業の継続が不可能となつた場合又は予備船員の責に帰すべき事由に基づいて解雇する場合においては、この限りでない。",
+        "【労働基準法 第二十条】\n使用者は、労働者を解雇しようとする場合においては、少くとも三十日前にその予告をしなければならない。 三十日前に予告をしない使用者は、三十日分以上の平均賃金を支払わなければならない。 但し、天災事変その他やむを得ない事由のために事業の継続が不可能となつた場合又は労働者の責に帰すべき事由に基いて解雇する場合においては、この限りでない。",
+        "【行政執行法人の労働関係に関する法律 第十九条】\n前条の規定による解雇に係る労働組合法第二十七条第一項の申立てを受けたときは、委員会は、当該申立ての日から二月以内に同法第二十七条の十二第一項の命令を発するようにしなければならない。"
       ],
-      "response": "Không tìm thấy thông tin liên quan trong tài liệu được cung cấp.",
-      "reference": "Luật Tiêu chuẩn Lao động Nhật Bản không quy định cụ thể thời gian thử việc tối đa, nhưng thực tế phổ biến là 3-6 tháng. Trong thời gian thử việc, người lao động vẫn được hưởng đầy đủ quyền lợi theo luật.",
+      "response": "### Trả lời\nThông báo sa thải phải được thực hiện trước ít nhất **30 ngày**.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 20 [第二十条], Khoản 1**: \"Người sử dụng lao động phải thông báo trước ít nhất **30 ngày** khi muốn sa thải người lao động. Nếu không thông báo trước, người sử dụng lao động phải trả ít nhất **30 ngày** tiền lương trung bình.\"\n\n### Lưu ý\nĐiều này không áp dụng trong trường hợp thiên tai, sự kiện bất khả kháng hoặc khi sa thải do lỗi của người lao động.",
+      "reference": "Theo Điều 20 Luật Tiêu chuẩn Lao động, người sử dụng lao động phải thông báo sa thải ít nhất 30 ngày trước, hoặc trả tiền lương tương đương 30 ngày làm việc (giải cố dự cáo thủ đương).",
+      "context_recall": 1.0,
+      "context_precision": 0.4166666666458333,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.3391365104385724
+    },
+    {
+      "user_input": "Nghỉ phép năm được tính như thế nào?",
+      "retrieved_contexts": [
+        "【船員法 第七十五条】\n第二項に規定する船員に前条第二項の規定により与えなければならない有給休暇の日数は、前項の規定にかかわらず、連続した勤務一年について十五日とし、連続した勤務三箇月を増すごとに三日（同項ただし書に規定する期間については、一箇月を増すごとに一日）を加える。",
+        "【労働基準法 第三十九条】\n使用者は、一年六箇月以上継続勤務した労働者に対しては、雇入れの日から起算して六箇月を超えて継続勤務する日（以下「六箇月経過日」という。）から起算した継続勤務年数一年ごとに、前項の日数に、次の表の上欄に掲げる六箇月経過日から起算した継続勤務年数の区分に応じ同表の下欄に掲げる労働日を加算した有給休暇を与えなければならない。 ただし、継続勤務した期間を六箇月経過日から一年ごとに区分した各期間（最後に一年未満の期間を生じたときは、当該期間）の初日の前日の属する期間において出勤した日数が全労働日の八割未満である者に対しては、当該初日以後の一年間においては有給休暇を与えることを要しない。",
+        "【船員法 第七十五条】\n前条第二項の規定により与えなければならない有給休暇の日数は、連続した勤務一年について二十五日とし、連続した勤務三箇月を増すごとに五日を加える。 ただし、同条第三項において準用する同条第一項ただし書の規定により有給休暇の付与を延期したときは、その延期した期間一箇月を増すごとに二日を加える。",
+        "【船員法 第七十七条】\n有給休暇は、労働協約の定めるところにより、期間を分けて、これを与えることができる。",
+        "【労働基準法 第三十九条】\n労働者が業務上負傷し、又は疾病にかかり療養のために休業した期間及び育児休業、介護休業等育児又は家族介護を行う労働者の福祉に関する法律第二条第一号に規定する育児休業又は同条第二号に規定する介護休業をした期間並びに産前産後の女性が第六十五条の規定によつて休業した期間は、第一項及び第二項の規定の適用については、これを出勤したものとみなす。"
+      ],
+      "response": "### Trả lời\nNghỉ phép năm (年次有給休暇) được quy định khác nhau tùy thuộc vào loại lao động. \n\n1. **Đối với lao động theo Luật Tiêu chuẩn Lao động [労働基準法]**:\n   - Theo Điều 39 [第三十九条], Khoản 2, người sử dụng lao động phải cung cấp nghỉ phép năm cho những lao động đã làm việc liên tục từ **6 tháng trở lên**. Số ngày nghỉ phép năm được tính dựa trên thời gian làm việc liên tục, cụ thể là:\n     - Sau **1 năm** làm việc liên tục, lao động sẽ nhận được số ngày nghỉ phép tương ứng với bảng quy định trong điều này.\n     - Nếu trong thời gian này, số ngày làm việc không đạt **80%** tổng số ngày làm việc thì sẽ không được cấp nghỉ phép năm.\n\n2. **Đối với lao động theo Luật Thuyền viên [船員法]**:\n   - Theo Điều 75 [第七十五条], Khoản 4, số ngày nghỉ phép năm được quy định là:\n     - **15 ngày** cho mỗi năm làm việc liên tục.\n     - Mỗi **3 tháng** làm việc liên tục thêm sẽ được cộng thêm **3 ngày** nghỉ phép.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 39 [第三十九条], Khoản 2**: quy định về việc cấp nghỉ phép năm cho lao động đã làm việc liên tục từ 6 tháng trở lên.\n- **Luật Thuyền viên [船員法] Điều 75 [第七十五条], Khoản 4**: quy định số ngày nghỉ phép năm cho thuyền viên.\n\n### Lưu ý\n- Số ngày nghỉ phép năm có thể khác nhau tùy thuộc vào quy định của từng ngành nghề và loại hình lao động.",
+      "reference": "Theo Điều 39 Luật Tiêu chuẩn Lao động, người lao động làm việc liên tục 6 tháng trở lên với tỷ lệ đi làm trên 80% được hưởng ít nhất 10 ngày nghỉ phép có lương. Số ngày tăng dần theo thâm niên, tối đa 20 ngày.",
       "context_recall": 0.0,
-      "context_precision": 0.36666666664833336,
-      "faithfulness": 0.0,
-      "answer_relevancy": 0.0
+      "context_precision": 0.94999999997625,
+      "faithfulness": 0.8,
+      "answer_relevancy": 0.39176021705239905
+    },
+    {
+      "user_input": "Công ty có thể sa thải nhân viên ngay lập tức không?",
+      "retrieved_contexts": [
+        "【労働契約法 第十七条】\n使用者は、期間の定めのある労働契約（以下この章において「有期労働契約」という。）について、やむを得ない事由がある場合でなければ、その契約期間が満了するまでの間において、労働者を解雇することができない。",
+        "【労働基準法 第十五条】\n前項の規定によつて明示された労働条件が事実と相違する場合においては、労働者は、即時に労働契約を解除することができる。",
+        "【労働基準法 第百三十七条】\n期間の定めのある労働契約（一定の事業の完了に必要な期間を定めるものを除き、その期間が一年を超えるものに限る。）を締結した労働者（第十四条第一項各号に規定する労働者を除く。）は、労働基準法の一部を改正する法律（平成十五年法律第百四号）附則第三条に規定する措置が講じられるまでの間、民法第六百二十八条の規定にかかわらず、当該労働契約の期間の初日から一年を経過した日以後においては、その使用者に申し出ることにより、いつでも退職することができる。",
+        "【労働基準法 第二十条】\n使用者は、労働者を解雇しようとする場合においては、少くとも三十日前にその予告をしなければならない。 三十日前に予告をしない使用者は、三十日分以上の平均賃金を支払わなければならない。 但し、天災事変その他やむを得ない事由のために事業の継続が不可能となつた場合又は労働者の責に帰すべき事由に基いて解雇する場合においては、この限りでない。",
+        "【労働契約法 第十六条】\n解雇は、客観的に合理的な理由を欠き、社会通念上相当であると認められない場合は、その権利を濫用したものとして、無効とする。"
+      ],
+      "response": "### Trả lời\nCông ty không thể sa thải nhân viên ngay lập tức trừ khi có lý do chính đáng và hợp pháp. Theo quy định tại Điều 17 [第十七条] của Luật Hợp đồng Lao động [労働契約法], trong trường hợp hợp đồng lao động có thời hạn, người sử dụng lao động không được sa thải nhân viên cho đến khi hết thời gian hợp đồng, trừ khi có lý do bất khả kháng.\n\nNgoài ra, theo Điều 20 [第二十条] của Luật Tiêu chuẩn Lao động [労働基準法], nếu công ty muốn sa thải nhân viên, họ phải thông báo trước ít nhất **30 ngày**. Nếu không thông báo trước, công ty phải trả cho nhân viên ít nhất **30 ngày lương**.\n\n### Căn cứ pháp lý\n- **Luật Hợp đồng Lao động [労働契約法] Điều 17 [第十七条]**: Người sử dụng lao động không được sa thải nhân viên trong thời gian hợp đồng, trừ khi có lý do bất khả kháng.\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 20 [第二十条]**: Người sử dụng lao động phải thông báo trước ít nhất **30 ngày** khi sa thải nhân viên.\n\n### Lưu ý\nCần lưu ý rằng nếu có lý do chính đáng như vi phạm nghiêm trọng quy định lao động, công ty có thể có quyền sa thải ngay lập tức, nhưng điều này phải được chứng minh là hợp lý và không vi phạm các quy định pháp luật hiện hành.",
+      "reference": "Theo Điều 20 Luật Tiêu chuẩn Lao động, người sử dụng lao động phải thông báo trước ít nhất 30 ngày hoặc trả lương tương đương 30 ngày. Sa thải ngay lập tức chỉ được phép trong trường hợp có lý do chính đáng và được cơ quan lao động chấp thuận.",
+      "context_recall": 1.0,
+      "context_precision": 0.8874999999778125,
+      "faithfulness": 0.8571428571428571,
+      "answer_relevancy": 0.5775405727477312
+    },
+    {
+      "user_input": "Quy định về nghỉ thai sản như thế nào?",
+      "retrieved_contexts": [
+        "【船員保険法 第百十八条】\n被保険者が連続する二以上の育児休業等をしている場合（これに準ずる場合として厚生労働省令で定める場合を含む。）における前項の規定の適用については、その全部を一の育児休業等とみなす。",
+        "【厚生年金保険法 第八十一条の二】\n被保険者が連続する二以上の育児休業等をしている場合（これに準ずる場合として厚生労働省令で定める場合を含む。）における第一項の規定の適用については、その全部を一の育児休業等とみなす。",
+        "【労働基準法 第六十五条】\n使用者は、六週間（多胎妊娠の場合にあつては、十四週間）以内に出産する予定の女性が休業を請求した場合においては、その者を就業させてはならない。",
+        "【雇用保険法 第七条】\n新雇用保険法第六十一条の八の規定は、第三号施行日以後に同条第一項に規定する出生時育児休業を開始する者について適用する。",
+        "【船員法 第三条】\n施行日前の育児休業等に関する法律（平成三年法律第七十六号）第二条第一項に規定する育児休業をした期間については、新法第七十四条第四項の規定は、適用しない。"
+      ],
+      "response": "### Trả lời\nQuy định về nghỉ thai sản tại Nhật Bản được quy định trong Luật Tiêu chuẩn Lao động [労働基準法]. Cụ thể, theo Điều 65 [第六十五条], người sử dụng lao động không được phép cho phép làm việc đối với phụ nữ có dự kiến sinh con trong vòng **6 tuần** trước ngày sinh (trong trường hợp mang thai đa thai, thời gian này là **14 tuần**). Điều này nhằm bảo vệ sức khỏe của người mẹ và thai nhi trong giai đoạn nhạy cảm này.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 65 [第六十五条]**: \"Người sử dụng lao động không được phép cho phép làm việc đối với phụ nữ có dự kiến sinh con trong vòng **6 tuần** trước ngày sinh (trong trường hợp mang thai đa thai, thời gian này là **14 tuần**).\"\n\n### Lưu ý\nCần lưu ý rằng quy định này chỉ áp dụng cho thời gian trước khi sinh, và không đề cập đến các quyền lợi khác liên quan đến nghỉ thai sản sau khi sinh.",
+      "reference": "Theo Điều 65 Luật Tiêu chuẩn Lao động, phụ nữ mang thai được nghỉ 6 tuần trước sinh (8 tuần nếu đa thai) và bắt buộc nghỉ 8 tuần sau sinh (có thể làm việc sau 6 tuần nếu có chứng nhận bác sĩ).",
+      "context_recall": 0.5,
+      "context_precision": 0.3333333333,
+      "faithfulness": 0.6666666666666666,
+      "answer_relevancy": 0.4360844911340651
+    },
+    {
+      "user_input": "Độ tuổi lao động tối thiểu ở Nhật là bao nhiêu?",
+      "retrieved_contexts": [
+        "【労働基準法 第六十条】\n第三十二条の二から第三十二条の五まで、第三十六条、第四十条及び第四十一条の二の規定は、満十八才に満たない者については、これを適用しない。",
+        "【船員法 第八十五条】\n船舶所有者は、年齢十六年未満の者（漁船にあつては、年齢十五年に達した日以後の最初の三月三十一日が終了した者を除く。）を船員として使用してはならない。 ただし、同一の家庭に属する者のみを使用する船舶については、この限りでない。",
+        "【労働基準法 第五十六条】\n前項の規定にかかわらず、別表第一第一号から第五号までに掲げる事業以外の事業に係る職業で、児童の健康及び福祉に有害でなく、かつ、その労働が軽易なものについては、行政官庁の許可を受けて、満十三歳以上の児童をその者の修学時間外に使用することができる。 映画の製作又は演劇の事業については、満十三歳に満たない児童についても、同様とする。",
+        "【労働基準法 第六十三条】\n使用者は、満十八才に満たない者を坑内で労働させてはならない。",
+        "【日本学術会議法 第七条】\n会員は、年齢七十年に達した時に退職する。"
+      ],
+      "response": "### Trả lời\nĐộ tuổi lao động tối thiểu ở Nhật Bản là **13 tuổi**, theo quy định của Luật Tiêu chuẩn Lao động [労働基準法]. Tuy nhiên, việc sử dụng lao động dưới 15 tuổi trong một số ngành nghề cụ thể bị hạn chế và cần có sự cho phép của cơ quan quản lý.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 56 [第五十六条], Khoản 2**: \"Mặc dù có quy định ở khoản trước, trong các ngành nghề không thuộc danh sách từ số một đến số năm của bảng phụ, có thể sử dụng trẻ em từ 13 tuổi trở lên ngoài giờ học, với điều kiện không gây hại đến sức khỏe và phúc lợi của trẻ em.\"\n\n### Lưu ý\n- Đối với trẻ em dưới 13 tuổi, việc sử dụng lao động có thể được phép trong một số lĩnh vực như sản xuất phim hoặc kịch, nhưng vẫn cần có sự cho phép của cơ quan có thẩm quyền.",
+      "reference": "Theo Điều 56 Luật Tiêu chuẩn Lao động, cấm sử dụng lao động dưới 15 tuổi (tính đến cuối năm học). Trẻ từ 13-15 tuổi có thể làm công việc nhẹ ngoài giờ học nếu có sự chấp thuận của cơ quan lao động.",
+      "context_recall": 1.0,
+      "context_precision": 0.5833333333041666,
+      "faithfulness": 0.75,
+      "answer_relevancy": 0.6677881988935521
+    },
+    {
+      "user_input": "Công ty phải trả lương làm đêm như thế nào?",
+      "retrieved_contexts": [
+        "【一般職の職員の給与に関する法律 第十八条】\n正規の勤務時間として午後十時から翌日の午前五時までの間に勤務することを命ぜられた職員には、その間に勤務した全時間に対して、勤務一時間につき、第十九条に規定する勤務一時間当りの給与額の百分の二十五を夜勤手当として支給する。",
+        "【一般職の職員の給与に関する法律 第十八条の二】\n第十五条に規定する勤務一時間当たりの給与額及び第十六条から前条までの規定により勤務一時間につき支給する超過勤務手当、休日給又は夜勤手当の額を算定する場合において、当該額に、五十銭未満の端数を生じたときはこれを切り捨て、五十銭以上一円未満の端数を生じたときはこれを一円に切り上げるものとする。",
+        "【一般職の職員の給与に関する法律 第五条】\n俸給は、一般職の職員の勤務時間、休暇等に関する法律（平成六年法律第三十三号。以下「勤務時間法」という。）第十三条第一項に規定する正規の勤務時間（以下単に「正規の勤務時間」という。）による勤務に対する報酬であつて、この法律に定める俸給の特別調整額、本府省業務調整手当、初任給調整手当、専門スタッフ職調整手当、扶養手当、地域手当、広域異動手当、研究員調整手当、住居手当、通勤手当、単身赴任手当、在宅勤務等手当、特殊勤務手当、特地勤務手当（第十四条の規定による手当を含む。第十九条の九において同じ。）、超過勤務手当、休日給、夜勤手当、宿日直手当、管理職員特別勤務手当、期末手当及び勤勉手当を除いた全額とする。",
+        "【労働基準法 第三十七条】\n使用者が、午後十時から午前五時まで（厚生労働大臣が必要であると認める場合においては、その定める地域又は期間については午後十一時から午前六時まで）の間において労働させた場合においては、その時間の労働については、通常の労働時間の賃金の計算額の二割五分以上の率で計算した割増賃金を支払わなければならない。",
+        "【一般職の職員の給与に関する法律 第十九条の二】\n宿日直勤務のうち常直的なものを命ぜられた職員には、その勤務に対して、二万三千五百円を超えない範囲内において人事院規則で定める月額の宿日直手当を支給する。"
+      ],
+      "response": "### Trả lời\nCông ty phải trả lương làm đêm cho nhân viên theo quy định tại Điều 18 [第十八条] của Luật về lương của nhân viên chính thức [一般職の職員の給与に関する法律]. Cụ thể, nếu nhân viên được yêu cầu làm việc trong khoảng thời gian từ 10 giờ tối đến 5 giờ sáng hôm sau, thì công ty phải trả thêm một khoản tiền làm đêm (夜勤手当) tương đương với **25%** mức lương theo giờ cho mỗi giờ làm việc trong khoảng thời gian này.\n\n### Căn cứ pháp lý\n- **Luật về lương của nhân viên chính thức [一般職の職員の給与に関する法律] Điều 18 [第十八条]**: \"Nhân viên được yêu cầu làm việc từ 10 giờ tối đến 5 giờ sáng hôm sau sẽ nhận được khoản tiền làm đêm là 25% mức lương theo giờ cho toàn bộ thời gian làm việc trong khoảng thời gian đó.\"\n\n### Lưu ý\nCần lưu ý rằng mức lương làm đêm này là một phần bổ sung cho mức lương cơ bản và không được tính vào các khoản phụ cấp khác như tiền làm thêm giờ hay tiền làm việc vào ngày nghỉ.",
+      "reference": "Theo Điều 37 Luật Tiêu chuẩn Lao động, làm việc từ 22:00 đến 5:00 được coi là làm đêm và phải được trả thêm ít nhất 25% lương cơ bản.",
+      "context_recall": 1.0,
+      "context_precision": 0.8055555555287036,
+      "faithfulness": 0.6,
+      "answer_relevancy": 0.5699095951113167
+    },
+    {
+      "user_input": "Nghỉ tuần bắt buộc được quy định thế nào?",
+      "retrieved_contexts": [
+        "【労働基準法 第三十五条】\n使用者は、労働者に対して、毎週少くとも一回の休日を与えなければならない。",
+        "【労働基準法 第三十四条】\n使用者は、労働時間が六時間を超える場合においては少くとも四十五分、八時間を超える場合においては少くとも一時間の休憩時間を労働時間の途中に与えなければならない。",
+        "【労働基準法 第三十二条】\n使用者は、労働者に、休憩時間を除き一週間について四十時間を超えて、労働させてはならない。",
+        "【労働基準法 第三十四条】\n使用者は、第一項の休憩時間を自由に利用させなければならない。",
+        "【労働基準法 第三十五条】\n前項の規定は、四週間を通じ四日以上の休日を与える使用者については適用しない。"
+      ],
+      "response": "### Trả lời\nNghỉ tuần bắt buộc được quy định trong Luật Tiêu chuẩn Lao động [労働基準法] tại Điều 35 [第三十五条]. Theo đó, người sử dụng lao động phải đảm bảo cho người lao động có ít nhất một ngày nghỉ trong mỗi tuần. Tuy nhiên, quy định này không áp dụng cho những người sử dụng lao động cung cấp ít nhất bốn ngày nghỉ trong bốn tuần, theo Khoản 2 của Điều 35.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 35 [第三十五条]**: \"Người sử dụng lao động phải cung cấp cho người lao động ít nhất một ngày nghỉ trong mỗi tuần.\"\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 35 [第三十五条], Khoản 2**: \"Quy định trên không áp dụng cho người sử dụng lao động cung cấp ít nhất bốn ngày nghỉ trong bốn tuần.\"\n\n### Lưu ý\nCần lưu ý rằng quy định về nghỉ tuần có thể có ngoại lệ đối với những người sử dụng lao động đáp ứng điều kiện về số ngày nghỉ trong tháng.",
+      "reference": "Theo Điều 35 Luật Tiêu chuẩn Lao động, người sử dụng lao động phải cho người lao động nghỉ ít nhất 1 ngày mỗi tuần, hoặc 4 ngày trong khoảng thời gian 4 tuần.",
+      "context_recall": 1.0,
+      "context_precision": 0.699999999965,
+      "faithfulness": 0.8,
+      "answer_relevancy": 0.57935241197673
+    },
+    {
+      "user_input": "Hợp đồng lao động cần có những nội dung gì?",
+      "retrieved_contexts": [
+        "【労働契約法 第三条】\n労働契約は、労働者及び使用者が仕事と生活の調和にも配慮しつつ締結し、又は変更すべきものとする。",
+        "【労働契約法 第五条】\n使用者は、労働契約に伴い、労働者がその生命、身体等の安全を確保しつつ労働することができるよう、必要な配慮をするものとする。",
+        "【労働契約法 第六条】\n労働契約は、労働者が使用者に使用されて労働し、使用者がこれに対して賃金を支払うことについて、労働者及び使用者が合意することによって成立する。",
+        "【労働契約法 第三条】\n労働契約は、労働者及び使用者が、就業の実態に応じて、均衡を考慮しつつ締結し、又は変更すべきものとする。",
+        "【労働契約法 第三条】\n労働契約は、労働者及び使用者が対等の立場における合意に基づいて締結し、又は変更すべきものとする。"
+      ],
+      "response": "### Trả lời\nHợp đồng lao động cần có những nội dung cơ bản sau đây:\n\n1. **Sự đồng ý giữa lao động và người sử dụng lao động**: Hợp đồng lao động phải được ký kết hoặc thay đổi dựa trên sự đồng ý của cả hai bên, trong đó đảm bảo sự bình đẳng giữa lao động và người sử dụng lao động (労働者及び使用者が対等の立場における合意に基づいて締結し、又は変更すべきものとする) (Điều 3, Khoản 5).\n\n2. **Cân nhắc đến thực tế công việc**: Hợp đồng cần được ký kết hoặc thay đổi với sự cân nhắc đến thực tế công việc và đảm bảo sự hài hòa giữa công việc và cuộc sống của lao động (労働者及び使用者が仕事と生活の調和にも配慮しつつ締結し、又は変更すべきものとする) (Điều 3, Khoản 3).\n\n3. **Đảm bảo an toàn cho lao động**: Người sử dụng lao động phải có trách nhiệm đảm bảo rằng lao động có thể làm việc trong điều kiện an toàn cho tính mạng và sức khỏe của họ (労働者がその生命、身体等の安全を確保しつつ労働することができるよう、必要な配慮をするものとする) (Điều 5).\n\n4. **Nội dung về tiền lương**: Hợp đồng phải quy định rõ ràng về việc người sử dụng lao động sẽ trả lương cho lao động trong quá trình làm việc (使用者がこれに対して賃金を支払うことについて) (Điều 6).\n\n### Căn cứ pháp lý\n- **Luật Hợp đồng Lao động [労働契約法] Điều 3 [第三条], Khoản 3**: Hợp đồng lao động phải được ký kết hoặc thay đổi với sự cân nhắc đến sự hài hòa giữa công việc và cuộc sống.\n- **Luật Hợp đồng Lao động [労働契約法] Điều 3 [第三条], Khoản 5**: Hợp đồng lao động phải được ký kết hoặc thay đổi dựa trên sự đồng ý của cả hai bên với tư cách bình đẳng.\n- **Luật Hợp đồng Lao động [労働契約法] Điều 5 [第五条]**: Người sử dụng lao động phải đảm bảo an toàn cho lao động.\n- **Luật Hợp đồng Lao động [労働契約法] Điều 6 [第六条]**: Hợp đồng lao động được hình thành từ sự đồng ý về việc trả lương.\n\n### Lưu ý\nHợp đồng lao động không chỉ là một văn bản pháp lý mà còn phải phản ánh đúng thực tế và nhu cầu của cả hai bên, đồng thời phải tuân thủ các quy định pháp luật hiện hành.",
+      "reference": "Theo Điều 15 Luật Tiêu chuẩn Lao động, hợp đồng lao động phải ghi rõ: thời hạn hợp đồng, nơi làm việc, nội dung công việc, thời gian làm việc, tiền lương, điều kiện nghỉ việc. Các điều khoản này phải được thông báo bằng văn bản.",
+      "context_recall": 0.0,
+      "context_precision": 0.0,
+      "faithfulness": 0.7857142857142857,
+      "answer_relevancy": 0.6365913349088056
+    },
+    {
+      "user_input": "Quy định về an toàn lao động như thế nào?",
+      "retrieved_contexts": [
+        "【労働基準法 第四十二条】\n労働者の安全及び衛生に関しては、労働安全衛生法（昭和四十七年法律第五十七号）の定めるところによる。",
+        "【労働契約法 第五条】\n使用者は、労働契約に伴い、労働者がその生命、身体等の安全を確保しつつ労働することができるよう、必要な配慮をするものとする。",
+        "【労働基準法 第一条】\nこの法律で定める労働条件の基準は最低のものであるから、労働関係の当事者は、この基準を理由として労働条件を低下させてはならないことはもとより、その向上を図るように努めなければならない。",
+        "【労働基準法 第一条】\n労働条件は、労働者が人たるに値する生活を営むための必要を充たすべきものでなければならない。",
+        "【労働基準法 第九十六条の二】\n行政官庁は、労働者の安全及び衛生に必要であると認める場合においては、工事の着手を差し止め、又は計画の変更を命ずることができる。"
+      ],
+      "response": "### Trả lời\nQuy định về an toàn lao động tại Nhật Bản được quy định trong nhiều điều khoản của các luật khác nhau. Cụ thể, Luật Tiêu chuẩn Lao động [労働基準法] và Luật Hợp đồng Lao động [労働契約法] có những quy định quan trọng về vấn đề này.\n\n1. **Luật Tiêu chuẩn Lao động** quy định rằng vấn đề an toàn và sức khỏe của người lao động phải tuân theo quy định của Luật An toàn và Sức khỏe Lao động [労働安全衛生法]. Điều này có nghĩa là người sử dụng lao động phải đảm bảo môi trường làm việc an toàn cho người lao động.\n\n2. **Luật Hợp đồng Lao động** yêu cầu người sử dụng lao động phải có những biện pháp cần thiết để đảm bảo rằng người lao động có thể làm việc một cách an toàn cho tính mạng và cơ thể của họ.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 42 [第四十二条]**: \"Về an toàn và sức khỏe của người lao động, phải tuân theo quy định của Luật An toàn và Sức khỏe Lao động.\"\n- **Luật Hợp đồng Lao động [労働契約法] Điều 5 [第五条]**: \"Người sử dụng lao động phải có những biện pháp cần thiết để đảm bảo rằng người lao động có thể làm việc một cách an toàn cho tính mạng và cơ thể của họ.\"\n\n### Lưu ý\nCác quy định này không chỉ yêu cầu người sử dụng lao động phải đảm bảo an toàn mà còn khuyến khích việc cải thiện điều kiện làm việc để đáp ứng nhu cầu sống của người lao động.",
+      "reference": "Theo Luật An toàn và Vệ sinh Lao động, người sử dụng lao động có nghĩa vụ đảm bảo an toàn và sức khỏe cho người lao động, bao gồm: phòng chống tai nạn, kiểm tra sức khỏe định kỳ, và đào tạo an toàn lao động.",
+      "context_recall": 1.0,
+      "context_precision": 0.8666666666377778,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.5531274348384378
+    },
+    {
+      "user_input": "Bảo hiểm thất nghiệp được quy định thế nào?",
+      "retrieved_contexts": [
+        "【雇用保険法 第四条】\nこの法律において「失業」とは、被保険者が離職し、労働の意思及び能力を有するにもかかわらず、職業に就くことができない状態にあることをいう。",
+        "【雇用保険法 第三条】\n新雇用保険法第十九条第一項（新雇用保険法第三十七条第九項において準用する場合を含む。）の規定は、施行日以後に行われる失業の認定に係る期間について適用する。",
+        "【雇用保険法 第二条】\n雇用保険は、政府が管掌する。",
+        "【雇用保険法 第四条】\nこの法律において「離職」とは、被保険者について、事業主との雇用関係が終了することをいう。",
+        "【雇用保険法 第一条】\n雇用保険は、労働者が失業した場合及び労働者について雇用の継続が困難となる事由が生じた場合に必要な給付を行うほか、労働者が自ら職業に関する教育訓練を受けた場合並びに労働者が子を養育するための休業及び所定労働時間を短縮することによる就業をした場合に必要な給付を行うことにより、労働者の生活及び雇用の安定を図るとともに、求職活動を容易にする等その就職を促進し、あわせて、労働者の職業の安定に資するため、失業の予防、雇用状態の是正及び雇用機会の増大、労働者の能力の開発及び向上その他労働者の福祉の増進を図ることを目的とする。"
+      ],
+      "response": "### Trả lời\nBảo hiểm thất nghiệp (雇用保険) là một hệ thống do chính phủ quản lý, nhằm cung cấp các khoản trợ cấp cần thiết cho người lao động khi họ bị thất nghiệp hoặc khi gặp khó khăn trong việc duy trì việc làm. Mục tiêu của bảo hiểm thất nghiệp là đảm bảo sự ổn định trong cuộc sống và việc làm của người lao động, đồng thời khuyến khích hoạt động tìm kiếm việc làm.\n\nTheo Điều 1 [第一条] của Luật Bảo hiểm Thất nghiệp [雇用保険法], bảo hiểm thất nghiệp không chỉ cung cấp trợ cấp cho người lao động khi họ thất nghiệp mà còn hỗ trợ khi người lao động cần tham gia các khóa đào tạo nghề, nghỉ phép để nuôi con, hoặc làm việc với thời gian ngắn hơn.\n\n### Căn cứ pháp lý\n- **Luật Bảo hiểm Thất nghiệp [雇用保険法] Điều 1 [第一条]**: Mục đích của bảo hiểm thất nghiệp là cung cấp các khoản trợ cấp cần thiết cho người lao động trong trường hợp thất nghiệp, khó khăn trong việc duy trì việc làm, cũng như hỗ trợ các hoạt động đào tạo nghề và các trường hợp khác nhằm nâng cao phúc lợi cho người lao động.\n\n### Lưu ý\nBảo hiểm thất nghiệp cũng bao gồm các quy định về việc xác định tình trạng thất nghiệp và các điều kiện để nhận trợ cấp, như được quy định tại Điều 4 [第四条].",
+      "reference": "Theo Luật Bảo hiểm Việc làm, người lao động sau khi nghỉ việc được nhận trợ cấp thất nghiệp nếu đã đóng bảo hiểm đủ thời gian quy định. Thời gian và mức trợ cấp phụ thuộc vào tuổi, thâm niên làm việc và lý do nghỉ việc.",
+      "context_recall": 0.5,
+      "context_precision": 0.699999999965,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.5066436675096487
+    },
+    {
+      "user_input": "Làm thêm quá 45 giờ một tháng có hợp pháp không?",
+      "retrieved_contexts": [
+        "【労働基準法 第三十六条】\n前項の限度時間は、一箇月について四十五時間及び一年について三百六十時間（第三十二条の四第一項第二号の対象期間として三箇月を超える期間を定めて同条の規定により労働させる場合にあつては、一箇月について四十二時間及び一年について三百二十時間）とする。",
+        "【労働基準法 第三十二条】\n使用者は、労働者に、休憩時間を除き一週間について四十時間を超えて、労働させてはならない。",
+        "【労働基準法 第三十六条】\n第一項の協定においては、第二項各号に掲げるもののほか、当該事業場における通常予見することのできない業務量の大幅な増加等に伴い臨時的に第三項の限度時間を超えて労働させる必要がある場合において、一箇月について労働時間を延長して労働させ、及び休日において労働させることができる時間（第二項第四号に関して協定した時間を含め百時間未満の範囲内に限る。）並びに一年について労働時間を延長して労働させることができる時間（同号に関して協定した時間を含め七百二十時間を超えない範囲内に限る。）を定めることができる。 この場合において、第一項の協定に、併せて第二項第二号の対象期間において労働時間を延長して労働させる時間が一箇月について四十五時間（第三十二条の四第一項第二号の対象期間として三箇月を超える期間を定めて同条の規定により労働させる場合にあつては、一箇月について四十二時間）を超えることができる月数（一年について六箇月以内に限る。）を定めなければならない。",
+        "【労働基準法 第三十七条】\n使用者が、第三十三条又は前条第一項の規定により労働時間を延長し、又は休日に労働させた場合においては、その時間又はその日の労働については、通常の労働時間又は労働日の賃金の計算額の二割五分以上五割以下の範囲内でそれぞれ政令で定める率以上の率で計算した割増賃金を支払わなければならない。 ただし、当該延長して労働させた時間が一箇月について六十時間を超えた場合においては、その超えた時間の労働については、通常の労働時間の賃金の計算額の五割以上の率で計算した割増賃金を支払わなければならない。",
+        "【労働基準法 第三十二条の三の二】\n使用者が、清算期間が一箇月を超えるものであるときの当該清算期間中の前条第一項の規定により労働させた期間が当該清算期間より短い労働者について、当該労働させた期間を平均し一週間当たり四十時間を超えて労働させた場合においては、その超えた時間（第三十三条又は第三十六条第一項の規定により延長し、又は休日に労働させた時間を除く。）の労働については、第三十七条の規定の例により割増賃金を支払わなければならない。"
+      ],
+      "response": "### Trả lời\nLàm thêm quá **45 giờ** một tháng là không hợp pháp, trừ khi có thỏa thuận cụ thể giữa người sử dụng lao động và người lao động theo quy định của pháp luật. Theo Điều 36 [第三十六条], Khoản 4 của Luật Tiêu chuẩn Lao động [労働基準法], giới hạn thời gian làm thêm là **45 giờ** một tháng và **360 giờ** một năm. Nếu có thỏa thuận đặc biệt, thời gian làm thêm có thể được điều chỉnh, nhưng không được vượt quá các giới hạn này.\n\n### Căn cứ pháp lý\n- **Luật Tiêu chuẩn Lao động [労働基準法] Điều 36 [第三十六条], Khoản 4**: \"Giới hạn thời gian làm thêm là một tháng không được vượt quá **45 giờ** và một năm không được vượt quá **360 giờ**.\"\n\n### Lưu ý\nNếu có thỏa thuận giữa người sử dụng lao động và người lao động, có thể có những điều chỉnh nhất định, nhưng tổng thời gian làm thêm không được vượt quá quy định pháp luật.",
+      "reference": "Theo sửa đổi Luật Tiêu chuẩn Lao động năm 2018, giới hạn làm thêm giờ tiêu chuẩn là 45 giờ/tháng và 360 giờ/năm. Trong các trường hợp đặc biệt có thể tăng lên nhưng không quá 100 giờ/tháng và trung bình 80 giờ trong 2-6 tháng.",
+      "context_recall": 0.5,
+      "context_precision": 0.99999999998,
+      "faithfulness": 0.7,
+      "answer_relevancy": 0.5020824522903146
     }
   ],
   "config": {
     "use_reranker": true,
     "dataset_path": "/home/dell/Documents/Code/norman/backend/scripts/eval/evaluation_dataset.json",
-    "samples_evaluated": 5
+    "samples_evaluated": 15
   },
-  "timestamp": "2026-01-15T01:57:26.048859"
+  "problematic_queries": [],
+  "timestamp": "2026-01-16T03:38:59.233962"
 }

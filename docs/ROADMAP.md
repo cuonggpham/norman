@@ -1,8 +1,8 @@
-# Japanese Legal RAG System - Roadmap
+# Japanese Financial Law RAG System - Roadmap
 
-Lộ trình phát triển hệ thống RAG cho văn bản pháp luật Nhật Bản.
+Lộ trình phát triển hệ thống RAG cho **luật pháp tài chính Nhật Bản** (thuế, bảo hiểm xã hội, đầu tư) - hỗ trợ người Việt Nam.
 
-**Last Updated**: 2026-01-10
+**Last Updated**: 2026-01-16
 
 ---
 
@@ -112,21 +112,59 @@ Query → Vector Search (top 10) → BGE Rerank (CPU) → Final Results (top 5)
 
 ---
 
-## 📋 Phase 3.5: LangGraph Agent (Next)
+## ✅ Phase 3.5: LangGraph Agent (Complete)
 
 ### Architecture
 ```
-┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────────┐
-│Translate│ →  │ Retrieve │ →  │ Rerank │ →  │ Generate │
-└─────────┘    └──────────┘    └────────┘    └──────────┘
-                    ↑                              │
-                    └──────── Self-Correction ─────┘
+┌──────────┐    ┌──────────┐    ┌────────┐    ┌─────────┐    ┌──────────┐
+│ Translate│ →  │ Retrieve │ →  │ Grade  │ →  │ Rerank  │ →  │ Generate │
+└──────────┘    └──────────┘    └────────┘    └─────────┘    └──────────┘
+                     ↑               │
+                     └── Rewrite ────┘ (if docs weak)
 ```
 
-**Tasks:**
-- [ ] Add `langchain`, `langgraph` dependencies
-- [ ] Implement `LegalRAGAgent` with graph nodes
-- [ ] Multi-step reasoning with retry loop
+### 3.5.1 Implementation Details
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `app/agents/state.py` | TypedDict state definition |
+| `app/agents/nodes.py` | 6 node functions + routing logic |
+| `app/agents/graph.py` | StateGraph + LegalRAGAgent wrapper |
+
+**Graph Nodes:**
+1. **translate** - Vietnamese → Japanese translation + multi-query generation
+2. **retrieve** - Multi-query vector search với deduplication
+3. **grade** - LLM grades document relevance ("relevant"/"not_relevant")
+4. **rerank** - BGE reranker for final ordering
+5. **generate** - Answer generation with citations
+6. **rewrite** - Query rewrite when < 2 relevant docs (max 2 retries)
+
+### 3.5.2 Self-Correction Loop
+```python
+if relevant_docs < 2 and rewrite_count < 2:
+    → Rewrite query with legal terminology
+    → Re-retrieve documents
+    → Re-grade
+```
+
+### 3.5.3 API Usage
+```bash
+# Default RAGPipeline (no grading, no self-correction)
+curl -X POST /api/chat -d '{"query": "..."}'
+
+# LangGraph Agent (with document grading + self-correction)
+curl -X POST /api/chat -d '{"query": "...", "use_agent": true}'
+```
+
+### 3.5.4 Test Results
+| Query | Answer | Sources |
+|-------|--------|---------|
+| Thời gian làm việc tối đa mỗi tuần? | 50 giờ (Điều 32-3 労働基準法) | 5 docs |
+
+**Performance:**
+- First call: ~500s (BGE model loading + LLM grading)
+- Subsequent calls: ~30-60s (model cached)
 
 ---
 
@@ -172,7 +210,7 @@ Query → Vector Search (top 10) → BGE Rerank (CPU) → Final Results (top 5)
 | Backend | FastAPI (Python 3.12) | ✅ Done |
 | Frontend | React 18 + Vite | ✅ Done |
 | Reranker | BGE-reranker-large (CPU) | ✅ Done |
-| Agent Framework | LangGraph | 📋 Next |
+| Agent Framework | LangGraph | ✅ Done |
 | Graph DB | Neo4j | ⬜ Future |
 
 ---
@@ -185,5 +223,5 @@ Query → Vector Search (top 10) → BGE Rerank (CPU) → Final Results (top 5)
 | Phase 1 | 2 days | ✅ Complete |
 | Phase 2 | 3-5 days | ✅ Complete |
 | Phase 3 | 2-3 days | ✅ Complete |
-| Phase 3.5 | 2-3 days | 📋 Next |
+| Phase 3.5 | 1 day | ✅ Complete |
 | Phase 4 | 5-7 days | ⬜ Pending |

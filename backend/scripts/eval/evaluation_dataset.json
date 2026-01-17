@@ -31,11 +31,11 @@
             "expected_article": "第4条"
         },
         {
-            "question": "Thời gian thử việc tối đa là bao lâu?",
-            "question_ja": "試用期間の最長期間はどのくらいですか？",
-            "ground_truth": "Luật Tiêu chuẩn Lao động Nhật Bản không quy định cụ thể thời gian thử việc tối đa, nhưng thực tế phổ biến là 3-6 tháng. Trong thời gian thử việc, người lao động vẫn được hưởng đầy đủ quyền lợi theo luật.",
+            "question": "Thông báo sa thải trước bao nhiêu ngày?",
+            "question_ja": "解雇予告は何日前に必要ですか？",
+            "ground_truth": "Theo Điều 20 Luật Tiêu chuẩn Lao động, người sử dụng lao động phải thông báo sa thải ít nhất 30 ngày trước, hoặc trả tiền lương tương đương 30 ngày làm việc (giải cố dự cáo thủ đương).",
             "expected_law": "労働基準法",
-            "expected_article": ""
+            "expected_article": "第20条"
         },
         {
             "question": "Nghỉ phép năm được tính như thế nào?",

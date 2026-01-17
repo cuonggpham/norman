@@ -66,17 +66,16 @@ def create_rag_pipeline(use_reranker: bool = True) -> RAGPipeline:
     )
 
 
-def run_rag_pipeline(pipeline: RAGPipeline, samples: list[dict]) -> list[dict]:
+def run_rag_pipeline(pipeline: RAGPipeline, samples: list[dict]) -> tuple[list[dict], list[dict]]:
     """
     Run RAG pipeline for each sample and collect results.
     
-    Returns list of dicts with:
-    - question: original question
-    - answer: generated answer
-    - contexts: list of retrieved context strings
-    - ground_truth: expected answer from dataset
+    Returns tuple of:
+    - results: list of dicts with question, answer, contexts, ground_truth
+    - problematic_queries: list of queries that failed or returned no documents
     """
     results = []
+    problematic_queries = []
     
     for i, sample in enumerate(samples):
         logger.info(f"Processing {i+1}/{len(samples)}: {sample['question'][:50]}...")
@@ -91,6 +90,15 @@ def run_rag_pipeline(pipeline: RAGPipeline, samples: list[dict]) -> list[dict]:
                 for src in response.sources
             ]
             
+            # Track queries with no documents found
+            if not contexts:
+                problematic_queries.append({
+                    "question": sample["question"],
+                    "issue": "No documents retrieved",
+                    "expected_law": sample.get("expected_law", ""),
+                    "expected_article": sample.get("expected_article", ""),
+                })
+            
             results.append({
                 "question": sample["question"],
                 "answer": response.answer,
@@ -101,6 +109,12 @@ def run_rag_pipeline(pipeline: RAGPipeline, samples: list[dict]) -> list[dict]:
             
         except Exception as e:
             logger.error(f"Error processing sample {i+1}: {e}")
+            problematic_queries.append({
+                "question": sample["question"],
+                "issue": f"Error: {e}",
+                "expected_law": sample.get("expected_law", ""),
+                "expected_article": sample.get("expected_article", ""),
+            })
             results.append({
                 "question": sample["question"],
                 "answer": f"Error: {e}",
@@ -109,7 +123,7 @@ def run_rag_pipeline(pipeline: RAGPipeline, samples: list[dict]) -> list[dict]:
                 "processing_time_ms": 0,
             })
     
-    return results
+    return results, problematic_queries
 
 
 def evaluate_with_ragas(results: list[dict]) -> dict:
@@ -139,10 +153,30 @@ def evaluate_with_ragas(results: list[dict]) -> dict:
     ragas_llm = LangchainLLMWrapper(langchain_llm)
     ragas_embeddings = LangchainEmbeddingsWrapper(langchain_embeddings)
     
+    # Filter out results with empty contexts or error responses
+    valid_results = [
+        r for r in results 
+        if r["contexts"] and not r["answer"].startswith("Error:")
+    ]
+    
+    if len(valid_results) < len(results):
+        logger.warning(
+            f"Filtered {len(results) - len(valid_results)} samples with empty contexts or errors"
+        )
+    
+    if not valid_results:
+        logger.error("No valid results to evaluate!")
+        return {
+            "overall_scores": {},
+            "dataset_size": 0,
+            "raw_results": [],
+            "skipped_count": len(results),
+        }
+    
     # Prepare dataset for RAGAS
     # RAGAS expects: user_input, response, retrieved_contexts, reference
     ragas_data = []
-    for r in results:
+    for r in valid_results:
         ragas_data.append({
             "user_input": r["question"],
             "response": r["answer"],
@@ -285,7 +319,7 @@ def main():
     
     # Run pipeline on samples
     logger.info("Running RAG pipeline on samples...")
-    rag_results = run_rag_pipeline(pipeline, samples)
+    rag_results, problematic_queries = run_rag_pipeline(pipeline, samples)
     
     # Evaluate with RAGAS
     logger.info("Evaluating with RAGAS metrics...")
@@ -297,10 +331,22 @@ def main():
         "dataset_path": str(args.dataset),
         "samples_evaluated": len(samples),
     }
+    evaluation["problematic_queries"] = problematic_queries
     
     # Save and display results
     save_results(evaluation, args.output)
     print_summary(evaluation)
+    
+    # Print problematic queries if any
+    if problematic_queries:
+        print("\n" + "=" * 60)
+        print("⚠️  PROBLEMATIC QUERIES (need data supplement)")
+        print("=" * 60)
+        for i, pq in enumerate(problematic_queries, 1):
+            print(f"\n{i}. {pq['question']}")
+            print(f"   Issue: {pq['issue']}")
+            print(f"   Expected: {pq['expected_law']} {pq['expected_article']}")
+        print("\n" + "=" * 60)
     
     return evaluation
 

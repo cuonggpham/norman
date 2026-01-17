@@ -1,6 +1,12 @@
-# Norman - Japanese Legal RAG System
+# Norman - Japanese Financial Law RAG System
 
-Hệ thống RAG để tra cứu và tìm kiếm văn bản pháp luật Nhật Bản.
+Hệ thống RAG chuyên về **luật pháp tài chính Nhật Bản**, hỗ trợ **người Việt Nam** sống và làm việc tại Nhật Bản.
+
+**Phạm vi tư vấn:**
+- 💰 **Thuế**: Thu nhập, tiêu dùng, cư trú, khai thuế cuối năm (確定申告)
+- 🏥 **Bảo hiểm xã hội**: Y tế, lương hưu, thất nghiệp
+- 📈 **Đầu tư & Tiết kiệm**: NISA, iDeCo, ふるさと納税
+- 💵 **Tài chính cá nhân**: Chuyển tiền quốc tế, thuế cho người nước ngoài
 
 ## Project Structure
 
@@ -42,8 +48,8 @@ npm run dev
 cd backend
 source venv/bin/activate
 python scripts/cli.py health
-python scripts/cli.py search "労働時間" --top-k 3
-python scripts/cli.py chat "Quy định về thời gian làm việc" --top-k 5
+python scripts/cli.py search "所得税" --top-k 3
+python scripts/cli.py chat "Thuế thu nhập cá nhân ở Nhật tính như thế nào?" --top-k 5
 ```
 
 ## API Endpoints
