@@ -9,7 +9,14 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from app.core.protocols import LLMProvider, EmbeddingProvider, VectorStore, Reranker
+from app.core.protocols import (
+    LLMProvider, 
+    EmbeddingProvider, 
+    VectorStore, 
+    Reranker,
+    SparseEmbeddingProvider,
+    HybridVectorStore,
+)
 from app.models.schemas import ChatResponse, SearchResult, SourceDocument
 
 logger = logging.getLogger(__name__)
@@ -27,8 +34,8 @@ class RAGPipeline:
     RAG Pipeline orchestrator.
     
     Coordinates the full RAG flow:
-    1. Embed query
-    2. Vector search
+    1. Embed query (dense + optional sparse)
+    2. Vector search (standard or hybrid)
     3. (Optional) Rerank
     4. Generate response with LLM
     
@@ -39,6 +46,16 @@ class RAGPipeline:
             llm=OpenAIProvider(...),
         )
         response = pipeline.chat("労働時間の規定は？")
+        
+        # With hybrid search:
+        pipeline = RAGPipeline(
+            embedding=EmbeddingService(...),
+            vector_store=QdrantVectorStore(...),
+            hybrid_store=QdrantHybridStore(...),
+            sparse_embedding=SparseEmbeddingService(),
+            llm=OpenAIProvider(...),
+            use_hybrid_search=True,
+        )
     """
     
     embedding: EmbeddingProvider
@@ -46,6 +63,11 @@ class RAGPipeline:
     llm: LLMProvider
     reranker: Reranker | None = None
     translator: QueryTranslator | None = None  # Cross-lingual translation
+    
+    # Hybrid search components (optional)
+    sparse_embedding: SparseEmbeddingProvider | None = None
+    hybrid_store: HybridVectorStore | None = None
+    use_hybrid_search: bool = False  # Toggle for hybrid search mode
     
     # Default settings
     default_top_k: int = 10  # Increased for better context recall with reranker
@@ -57,6 +79,7 @@ class RAGPipeline:
         query: str,
         top_k: int | None = None,
         filters: dict[str, Any] | None = None,
+        use_hybrid: bool | None = None,
     ) -> list[SearchResult]:
         """
         Vector search only (no LLM generation).
@@ -65,6 +88,7 @@ class RAGPipeline:
             query: Search query
             top_k: Number of results
             filters: Metadata filters
+            use_hybrid: Override for hybrid search mode (None = use default)
             
         Returns:
             List of search results
@@ -72,18 +96,33 @@ class RAGPipeline:
         start_time = time.time()
         top_k = top_k or self.default_top_k
         
+        # Determine search mode
+        hybrid_mode = use_hybrid if use_hybrid is not None else self.use_hybrid_search
+        
         # Translate query if translator available (Vietnamese → Japanese)
         search_query = self._translate_query(query)
         
-        # Embed query
+        # Embed query (dense)
         query_vector = self.embedding.embed(search_query)
         
-        # Search
-        raw_results = self.vector_store.search(
-            query_vector=query_vector,
-            top_k=top_k,
-            filters=filters,
-        )
+        # Perform search (hybrid or vector-only)
+        if hybrid_mode and self.sparse_embedding and self.hybrid_store:
+            # Hybrid search: dense + sparse with RRF fusion
+            sparse_vector = self.sparse_embedding.embed(search_query)
+            raw_results = self.hybrid_store.hybrid_search(
+                dense_vector=query_vector,
+                sparse_vector=sparse_vector,
+                top_k=top_k,
+                filters=filters,
+            )
+            logger.debug(f"Hybrid search returned {len(raw_results)} results")
+        else:
+            # Standard vector search
+            raw_results = self.vector_store.search(
+                query_vector=query_vector,
+                top_k=top_k,
+                filters=filters,
+            )
         
         # Convert to SearchResult
         results = [self._to_search_result(r) for r in raw_results]
@@ -101,6 +140,7 @@ class RAGPipeline:
         filters: dict[str, Any] | None = None,
         use_multi_query: bool = True,
         auto_filter: bool = False,  # Disabled: Qdrant only has '労働' category
+        use_hybrid: bool | None = None,
     ) -> ChatResponse:
         """
         Full RAG: retrieve + generate.
@@ -111,12 +151,17 @@ class RAGPipeline:
             filters: Metadata filters
             use_multi_query: If True, use multi-query retrieval for better recall
             auto_filter: If True, auto-detect category and add filters
+            use_hybrid: Override for hybrid search mode (None = use default)
             
         Returns:
             ChatResponse with answer and sources
         """
         start_time = time.time()
         top_k = top_k or self.default_top_k
+        
+        # Determine search mode
+        hybrid_mode = use_hybrid if use_hybrid is not None else self.use_hybrid_search
+        can_hybrid = hybrid_mode and self.sparse_embedding and self.hybrid_store
         
         # 0a. Auto-detect category and merge with user filters
         final_filters = dict(filters) if filters else {}
@@ -133,7 +178,8 @@ class RAGPipeline:
         # 0b. Get search queries (multi-query or single)
         if use_multi_query and self.translator and hasattr(self.translator, 'get_all_search_texts'):
             search_texts = self.translator.get_all_search_texts(query)
-            logger.info(f"Multi-query retrieval with {len(search_texts)} queries")
+            search_texts = search_texts[:3]  # ⚡ EMERGENCY FIX: Reduce from 5 to 3 queries (-5s)
+            logger.info(f"Multi-query retrieval with {len(search_texts)} queries (limited for performance)")
         else:
             search_query = self._translate_query(query)
             search_texts = [search_query]
@@ -141,15 +187,35 @@ class RAGPipeline:
         # 1. Retrieve with multiple queries and deduplicate
         retrieve_k = top_k * self.retrieval_multiplier if self.reranker else top_k * 2
         
+        # ⚡ OPTIMIZATION: Batch embed all search texts at once (reduces 6 calls to 2)
+        logger.debug(f"Batch embedding {len(search_texts)} search queries")
+        all_dense_vectors = self.embedding.embed_batch(search_texts)
+        all_sparse_vectors = None
+        if can_hybrid:
+            all_sparse_vectors = self.sparse_embedding.embed_batch(search_texts)
+        
         all_results = {}  # chunk_id -> result (for deduplication)
         
-        for search_text in search_texts:
-            query_vector = self.embedding.embed(search_text)
-            results = self.vector_store.search(
-                query_vector=query_vector,
-                top_k=retrieve_k,
-                filters=final_filters if final_filters else None,
-            )
+        for idx, search_text in enumerate(search_texts):
+            # Use pre-computed embeddings
+            query_vector = all_dense_vectors[idx]
+            
+            if can_hybrid:
+                # Hybrid search: dense + sparse with RRF fusion
+                sparse_vector = all_sparse_vectors[idx]
+                results = self.hybrid_store.hybrid_search(
+                    dense_vector=query_vector,
+                    sparse_vector=sparse_vector,
+                    top_k=retrieve_k,
+                    filters=final_filters if final_filters else None,
+                )
+            else:
+                # Standard vector search
+                results = self.vector_store.search(
+                    query_vector=query_vector,
+                    top_k=retrieve_k,
+                    filters=final_filters if final_filters else None,
+                )
             
             # Merge results, keeping highest score for each chunk
             for r in results:

@@ -137,17 +137,18 @@ class QueryTranslator:
             
             return QueryExpansion(
                 original=query,
-                translated=data.get("translated", self.translate(query)),
+                translated=data.get("translated", query),  # ⚡ OPTIMIZATION: Use query directly, no fallback LLM call
                 keywords=data.get("keywords", []),
                 related_terms=data.get("related_terms", []),
                 search_queries=data.get("search_queries", []),
             )
         except (json.JSONDecodeError, Exception) as e:
-            logger.warning(f"Query expansion failed, falling back to simple translation: {e}")
-            # Fallback to simple translation
+            logger.warning(f"Query expansion failed, using original query: {e}")
+            # ⚡ OPTIMIZATION: Return original query directly without calling translate()
+            # This saves 1 LLM call. Most queries are already Japanese after initial detection.
             return QueryExpansion(
                 original=query,
-                translated=self.translate(query),
+                translated=query,
                 keywords=[],
                 related_terms=[],
                 search_queries=[],
@@ -179,22 +180,45 @@ class QueryTranslator:
         
         return texts
     
-    def _is_japanese(self, text: str) -> bool:
+    def _is_japanese(self, text: str, threshold: float = 0.5) -> bool:
         """
-        Check if text is primarily Japanese.
+        Check if text is primarily Japanese based on character ratio.
         
-        Simple heuristic: contains Hiragana, Katakana, or Kanji.
+        Uses ratio-based detection instead of single character check to handle
+        mixed Vietnamese-Japanese queries like "Thuế quà tặng (贈与税)..." which
+        should be translated (primarily Vietnamese with Japanese terms).
+        
+        Args:
+            text: Input text to check
+            threshold: Minimum ratio of Japanese chars to consider as Japanese (default 50%)
+        
+        Returns:
+            True if Japanese characters exceed threshold ratio
         """
+        if not text:
+            return False
+        
+        jp_chars = 0
+        total_chars = 0
+        
         for char in text:
-            # Hiragana: U+3040-U+309F
-            # Katakana: U+30A0-U+30FF
-            # CJK Unified: U+4E00-U+9FFF
+            # Skip whitespace and common punctuation
+            if char.isspace() or char in '()（）「」、。？！.,?!':
+                continue
+            
+            total_chars += 1
+            
+            # Japanese character ranges
             if '\u3040' <= char <= '\u309f':  # Hiragana
-                return True
-            if '\u30a0' <= char <= '\u30ff':  # Katakana
-                return True
-            if '\u4e00' <= char <= '\u9fff':  # Kanji
-                # Could be Chinese, but in this context likely Japanese
-                return True
-        return False
+                jp_chars += 1
+            elif '\u30a0' <= char <= '\u30ff':  # Katakana
+                jp_chars += 1
+            elif '\u4e00' <= char <= '\u9fff':  # Kanji/CJK
+                jp_chars += 1
+        
+        if total_chars == 0:
+            return False
+        
+        ratio = jp_chars / total_chars
+        return ratio >= threshold
 

@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
     api_prefix: str = "/api"
     
+    # Memory Optimization Settings
+    use_hybrid_search: bool = True  # Toggle hybrid search (saves ~500MB if False)
+    reranker_enabled: bool = False  # Toggle reranker (saves ~1-2GB if False)
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

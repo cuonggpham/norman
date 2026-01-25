@@ -106,20 +106,52 @@ def get_query_translator() -> QueryTranslator:
 
 
 @lru_cache
+def get_sparse_embedding_service():
+    """
+    Get cached sparse embedding service for hybrid search.
+    
+    ⚠️ LAZY LOADED: Only initializes when actually called.
+    Model (~500MB) loads on first embed() call.
+    """
+    from app.services.sparse_embedding import SparseEmbeddingService
+    logger.info("[LAZY LOAD] Initializing sparse embedding service")
+    return SparseEmbeddingService(model_name="Qdrant/bm25")
+
+
+@lru_cache
+def get_hybrid_vector_store():
+    """
+    Get cached hybrid vector store.
+    
+    ⚠️ LAZY LOADED: Only initializes when use_hybrid_search=True.
+    """
+    from app.db.hybrid_store import QdrantHybridStore
+    client = get_qdrant_client()
+    logger.info("[LAZY LOAD] Initializing hybrid vector store")
+    return QdrantHybridStore(
+        client=client,
+        prefetch_limit=20,  # Balance between quality and speed
+    )
+
+
+@lru_cache
 def get_reranker():
     """
     Get cached BGE reranker (optional).
     
-    Returns None if loading fails (allows graceful degradation).
+    ⚠️ MEMORY HEAVY: BGE model loads ~1-2GB into RAM.
+    Returns None if disabled or if loading fails.
     """
     settings = get_settings()
-    if not getattr(settings, 'reranker_enabled', True):
-        logger.info("Reranker disabled by config")
+    
+    # Check if explicitly disabled (default is disabled for now)
+    if not getattr(settings, 'reranker_enabled', False):  # Changed default to False
+        logger.info("✓ Reranker disabled - skipping model load (saves ~1-2GB RAM)")
         return None
     
     try:
         from app.services.reranker import BGEReranker
-        logger.info("Loading BGE reranker...")
+        logger.warning("[HEAVY LOAD] Loading BGE reranker (~1-2GB RAM)...")
         return BGEReranker()
     except Exception as e:
         logger.warning(f"Failed to load reranker, continuing without: {e}")
@@ -132,13 +164,35 @@ def get_rag_pipeline() -> RAGPipeline:
     Get cached RAG pipeline.
     
     This is the main entry point for RAG operations.
+    
+    Memory optimization:
+    - Only loads hybrid components when use_hybrid_search=True
+    - Reranker disabled to save ~1-2GB RAM
+    - Sparse embedding lazy loaded (~500MB on first use)
     """
+    settings = get_settings()
+    use_hybrid = getattr(settings, 'use_hybrid_search', True)
+    
+    # Conditional loading: only load hybrid components if enabled
+    if use_hybrid:
+        logger.info("Hybrid search enabled - loading sparse embedding and hybrid store")
+        sparse_emb = get_sparse_embedding_service()
+        hybrid_st = get_hybrid_vector_store()
+    else:
+        logger.info("Hybrid search disabled - using vector-only search (saves ~500MB RAM)")
+        sparse_emb = None
+        hybrid_st = None
+    
     return RAGPipeline(
         embedding=get_embedding_service(),
         vector_store=get_vector_store(),
         llm=get_llm_provider(),
-        reranker=get_reranker(),  # BGE reranker (Phase 3)
+        reranker=None,  # ⚡ EMERGENCY FIX: Disable reranker (-60s)
         translator=get_query_translator(),  # Vietnamese → Japanese
+        # Hybrid search configuration
+        use_hybrid_search=use_hybrid,
+        sparse_embedding=sparse_emb,
+        hybrid_store=hybrid_st,
     )
 
 

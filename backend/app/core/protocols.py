@@ -87,6 +87,50 @@ class VectorStore(Protocol):
 
 
 @runtime_checkable
+class SparseEmbeddingProvider(Protocol):
+    """Interface for sparse embedding providers (BM25, SPLADE, etc.)."""
+    
+    def embed(self, text: str) -> dict[str, list]:
+        """
+        Embed single text to sparse vector.
+        
+        Returns:
+            Dict with 'indices' and 'values' lists
+        """
+        ...
+    
+    def embed_batch(self, texts: list[str]) -> list[dict[str, list]]:
+        """Embed multiple texts to sparse vectors."""
+        ...
+
+
+@runtime_checkable
+class HybridVectorStore(Protocol):
+    """Interface for hybrid vector stores supporting dense + sparse search."""
+    
+    def hybrid_search(
+        self,
+        dense_vector: list[float],
+        sparse_vector: dict[str, list],
+        top_k: int = 10,
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Hybrid search combining dense and sparse vectors.
+        
+        Args:
+            dense_vector: Dense query embedding
+            sparse_vector: Sparse query vector with 'indices' and 'values'
+            top_k: Number of results
+            filters: Metadata filters
+            
+        Returns:
+            List of results with id, score, payload
+        """
+        ...
+
+
+@runtime_checkable
 class Reranker(Protocol):
     """Interface for rerankers (Phase 3)."""
     

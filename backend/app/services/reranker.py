@@ -43,14 +43,16 @@ class BGEReranker:
         global _reranker_model
         
         if _reranker_model is None:
-            logger.info(f"Loading BGE reranker: {model_name} (device={device})")
+            logger.warning(f"[HEAVY LOAD] Loading BGE reranker: {model_name} (device={device}) - ~1-2GB RAM")
             from FlagEmbedding import FlagReranker
             _reranker_model = FlagReranker(
                 model_name,
                 use_fp16=use_fp16,
                 device=device,
             )
-            logger.info("BGE reranker loaded successfully")
+            logger.info("✓ BGE reranker loaded successfully")
+        else:
+            logger.info("Using existing BGE reranker instance (already in memory)")
         
         self.model = _reranker_model
     

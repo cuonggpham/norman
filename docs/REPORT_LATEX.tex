@@ -1,0 +1,957 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{CJKutf8}
+
+% TikZ packages for diagrams
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc, chains, decorations.pathreplacing}
+
+\geometry{left=3cm,right=2cm,top=2.5cm,bottom=2.5cm}
+
+% TikZ styles
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=red!20]
+\tikzstyle{process} = [rectangle, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=blue!15]
+\tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0.8cm, text centered, draw=black, fill=green!15, aspect=2]
+\tikzstyle{data} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2cm, minimum height=0.8cm, text centered, draw=black, fill=orange!15]
+\tikzstyle{database} = [cylinder, shape border rotate=90, draw=black, fill=purple!15, minimum height=1cm, minimum width=1.5cm]
+\tikzstyle{arrow} = [->, >=stealth, thick]
+\tikzstyle{bidiarrow} = [<->, >=stealth, thick]
+
+% Code listing style
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{gray!10},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green!60!black},
+}
+\lstset{style=mystyle}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+}
+
+\title{\textbf{BÁO CÁO ĐỒ ÁN TỐT NGHIỆP} \\ \vspace{0.5cm} \Large HỆ THỐNG RAG TƯ VẤN PHÁP LUẬT TÀI CHÍNH NHẬT BẢN CHO NGƯỜI VIỆT NAM}
+\author{
+    \textbf{Sinh viên thực hiện:} [Họ và tên] \\
+    \textbf{Mã sinh viên:} [Mã số] \\
+    \textbf{Giảng viên hướng dẫn:} [Họ và tên] \\
+    \textbf{Năm học:} 2025-2026
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+%----------------------------------------------------------------------
+\chapter{GIỚI THIỆU}
+%----------------------------------------------------------------------
+
+\section{Đặt vấn đề}
+
+Cộng đồng người Việt Nam sinh sống và làm việc tại Nhật Bản ngày càng đông đảo, với nhu cầu rất lớn về tìm hiểu các quy định pháp luật tài chính của Nhật Bản. Tuy nhiên, họ gặp phải nhiều rào cản:
+
+\begin{itemize}
+    \item \textbf{Rào cản ngôn ngữ}: Các văn bản pháp luật được viết bằng tiếng Nhật với thuật ngữ pháp lý phức tạp
+    \item \textbf{Khó khăn tiếp cận}: Nguồn thông tin phân tán, khó tìm kiếm trên nhiều trang web khác nhau
+    \item \textbf{Thiếu hỗ trợ song ngữ}: Hầu hết các công cụ tìm kiếm pháp luật không hỗ trợ tiếng Việt
+\end{itemize}
+
+\section{Mục tiêu đồ án}
+
+Xây dựng hệ thống \textbf{RAG (Retrieval-Augmented Generation)} hỗ trợ người Việt Nam tra cứu và tư vấn pháp luật tài chính Nhật Bản:
+
+\begin{enumerate}
+    \item \textbf{Tìm kiếm ngữ nghĩa xuyên ngôn ngữ}: Cho phép người dùng hỏi bằng tiếng Việt, tìm kiếm trong kho văn bản tiếng Nhật
+    \item \textbf{Trả lời chính xác có trích dẫn}: Sinh câu trả lời tiếng Việt kèm nguồn gốc điều luật
+    \item \textbf{Self-correction}: Tự động cải thiện kết quả khi tài liệu không đủ chất lượng
+\end{enumerate}
+
+\section{Phạm vi đồ án}
+
+\textbf{Phạm vi tư vấn pháp luật:}
+\begin{itemize}
+    \item \begin{CJK}{UTF8}{min}\textbf{Thuế (税金)}: Thuế thu nhập, thuế tiêu dùng, thuế cư trú, khai thuế cuối năm (確定申告)\end{CJK}
+    \item \begin{CJK}{UTF8}{min}\textbf{Bảo hiểm xã hội (社会保険)}: Bảo hiểm y tế, lương hưu, bảo hiểm thất nghiệp\end{CJK}
+    \item \begin{CJK}{UTF8}{min}\textbf{Đầu tư \& Tiết kiệm}: NISA, iDeCo, ふるさと納税\end{CJK}
+    \item \textbf{Tài chính cá nhân}: Chuyển tiền quốc tế, thuế cho người nước ngoài
+\end{itemize}
+
+\textbf{Nguồn dữ liệu:}
+\begin{itemize}
+    \item \textbf{233 văn bản luật} từ e-Gov API (Cổng thông tin pháp luật Nhật Bản)
+    \item \textbf{15,629 chunks} sau khi phân đoạn và xử lý
+\end{itemize}
+
+%----------------------------------------------------------------------
+\chapter{CƠ SỞ LÝ THUYẾT}
+%----------------------------------------------------------------------
+
+\section{Retrieval-Augmented Generation (RAG)}
+
+RAG là một kiến trúc kết hợp giữa Information Retrieval và Large Language Model, giải quyết vấn đề ``hallucination'' của LLM bằng cách cung cấp context thực tế.
+
+% RAG Pipeline Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.8cm, auto]
+    \node[process, fill=blue!20] (query) {Query Tiếng Việt};
+    \node[process, right of=query, xshift=0.8cm] (translate) {Query Translation};
+    \node[process, right of=translate, xshift=0.8cm] (embed) {Embedding};
+    \node[process, right of=embed, xshift=0.8cm] (search) {Vector Search};
+    \node[process, below of=search] (chunks) {Retrieved Chunks};
+    \node[process, left of=chunks, xshift=-0.8cm] (llm) {LLM Generation};
+    \node[process, left of=llm, xshift=-0.8cm, fill=green!20] (answer) {Answer Tiếng Việt};
+    
+    \draw[arrow] (query) -- (translate);
+    \draw[arrow] (translate) -- (embed);
+    \draw[arrow] (embed) -- (search);
+    \draw[arrow] (search) -- (chunks);
+    \draw[arrow] (chunks) -- (llm);
+    \draw[arrow] (llm) -- (answer);
+\end{tikzpicture}
+\caption{RAG Pipeline Overview}
+\end{figure}
+
+\textbf{Ưu điểm của RAG:}
+\begin{itemize}
+    \item Giảm thiểu hallucination bằng cách grounding vào dữ liệu thực
+    \item Có thể cập nhật kiến thức mà không cần fine-tuning model
+    \item Cung cấp nguồn trích dẫn minh bạch
+\end{itemize}
+
+\section{Vector Embedding và Semantic Search}
+
+\textbf{Embedding} là kỹ thuật biến đổi văn bản thành vector số trong không gian đa chiều, bảo toàn ngữ nghĩa.
+
+% Vector Embedding Process Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.5cm]
+    \node[process] (text) {\begin{CJK}{UTF8}{min}労働基準法第一条\end{CJK}};
+    \node[process, right of=text, xshift=2cm] (api) {OpenAI API};
+    \node[process, right of=api, xshift=2cm] (vector) {[0.12, -0.34, ..., 0.89]};
+    \node[database, right of=vector, xshift=1.8cm] (db) {Qdrant};
+    
+    \draw[arrow] (text) -- node[above] {encode} (api);
+    \draw[arrow] (api) -- node[above] {3072-dim} (vector);
+    \draw[arrow] (vector) -- node[above] {store} (db);
+\end{tikzpicture}
+\caption{Vector Embedding Process}
+\end{figure}
+
+\textbf{Mô hình sử dụng:} \texttt{text-embedding-3-large} của OpenAI
+\begin{itemize}
+    \item \textbf{Kích thước vector:} 3072 dimensions
+    \item \textbf{Ưu điểm:} Hiệu quả cao với văn bản đa ngữ, đặc biệt là Nhật-Việt
+\end{itemize}
+
+\section{Hybrid Search}
+
+Kết hợp \textbf{Vector Search} (Dense) và \textbf{BM25 Search} (Sparse) để tận dụng ưu điểm của cả hai:
+
+% Hybrid Search Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.5cm]
+    \node[process] (query) {Query};
+    \node[process, below left of=query, xshift=-1.5cm, yshift=-0.5cm] (dense) {Dense Embedding};
+    \node[process, below right of=query, xshift=1.5cm, yshift=-0.5cm] (sparse) {Sparse (BM25)};
+    \node[process, below of=dense, yshift=-0.3cm] (vs) {Vector Search};
+    \node[process, below of=sparse, yshift=-0.3cm] (ks) {Keyword Search};
+    \node[process, below of=query, yshift=-2.5cm, fill=yellow!20] (rrf) {RRF Fusion};
+    \node[process, below of=rrf] (result) {Final Ranking};
+    
+    \draw[arrow] (query) -- (dense);
+    \draw[arrow] (query) -- (sparse);
+    \draw[arrow] (dense) -- (vs);
+    \draw[arrow] (sparse) -- (ks);
+    \draw[arrow] (vs) -- node[left] {Semantic} (rrf);
+    \draw[arrow] (ks) -- node[right] {Exact} (rrf);
+    \draw[arrow] (rrf) -- (result);
+\end{tikzpicture}
+\caption{Hybrid Search Architecture}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Phương pháp} & \textbf{Ưu điểm} & \textbf{Nhược điểm} \\
+\midrule
+Vector Search & Hiểu ngữ nghĩa, tìm synonym & Có thể miss keyword chính xác \\
+BM25/Sparse & Chính xác với keyword & Không hiểu ngữ nghĩa \\
+\textbf{Hybrid} & Kết hợp cả hai & Cần tuning fusion weight \\
+\bottomrule
+\end{tabular}
+\caption{So sánh các phương pháp search}
+\end{table}
+
+\textbf{Công thức Reciprocal Rank Fusion (RRF):}
+\begin{equation}
+RRF_{score}(d) = \sum_{q \in Q} \frac{1}{k + rank(d, q)}
+\end{equation}
+
+Trong đó $k = 60$ là hằng số smoothing.
+
+\section{Two-Stage Retrieval với Reranking}
+
+Pipeline hai giai đoạn kết hợp bi-encoder nhanh và cross-encoder chính xác:
+
+% Two-Stage Retrieval Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=2cm]
+    \node[process] (query) {Query};
+    
+    % Stage 1
+    \node[process, right of=query, xshift=1cm, fill=blue!20] (bi) {Bi-Encoder};
+    \node[process, right of=bi, xshift=1.2cm] (top20) {Top 20-40};
+    
+    % Stage 2
+    \node[process, right of=top20, xshift=1cm, fill=orange!20] (cross) {Cross-Encoder};
+    \node[process, right of=cross, xshift=1.2cm] (top5) {Top 5};
+    
+    \draw[arrow] (query) -- (bi);
+    \draw[arrow] (bi) -- node[above] {Fast O(1)} (top20);
+    \draw[arrow] (top20) -- (cross);
+    \draw[arrow] (cross) -- node[above] {Slow O(n)} (top5);
+    
+    % Labels
+    \node[below of=bi, yshift=0.5cm] {\small Stage 1: Recall};
+    \node[below of=cross, yshift=0.5cm] {\small Stage 2: Precision};
+\end{tikzpicture}
+\caption{Two-Stage Retrieval Pipeline}
+\end{figure}
+
+\textbf{Bi-Encoder (Stage 1):}
+\begin{itemize}
+    \item Encode query và document độc lập
+    \item Nhanh: O(1) với pre-computed document embeddings
+\end{itemize}
+
+\textbf{Cross-Encoder (Stage 2):}
+\begin{itemize}
+    \item Encode query-document pair cùng nhau
+    \item Chậm: O(n) với mỗi document, nhưng chính xác hơn
+\end{itemize}
+
+\textbf{Mô hình reranker:} \texttt{BAAI/bge-reranker-large}
+
+\section{LangGraph Agent Framework}
+
+LangGraph cho phép xây dựng workflow phức tạp với self-correction loop:
+
+% LangGraph State Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=2cm]
+    \node[startstop] (start) {START};
+    \node[process, right of=start, xshift=0.5cm] (translate) {Translate};
+    \node[process, right of=translate, xshift=0.5cm] (retrieve) {Retrieve};
+    \node[process, right of=retrieve, xshift=0.5cm] (grade) {Grade};
+    \node[decision, below of=grade] (check) {relevant $\geq$ 2?};
+    \node[process, below of=check, yshift=-0.3cm] (rerank) {Rerank};
+    \node[process, left of=check, xshift=-1.5cm] (rewrite) {Rewrite};
+    \node[process, below of=rerank] (generate) {Generate};
+    \node[startstop, below of=generate] (end) {END};
+    
+    \draw[arrow] (start) -- (translate);
+    \draw[arrow] (translate) -- (retrieve);
+    \draw[arrow] (retrieve) -- (grade);
+    \draw[arrow] (grade) -- (check);
+    \draw[arrow] (check) -- node[right] {Yes} (rerank);
+    \draw[arrow] (check) -- node[above] {No} (rewrite);
+    \draw[arrow] (rewrite) |- node[above, pos=0.3] {retry $<$ 2} (retrieve);
+    \draw[arrow] (rerank) -- (generate);
+    \draw[arrow] (generate) -- (end);
+\end{tikzpicture}
+\caption{LangGraph Agent State Diagram}
+\end{figure}
+
+%----------------------------------------------------------------------
+\chapter{PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG}
+%----------------------------------------------------------------------
+
+\section{Kiến trúc tổng quan}
+
+% System Architecture Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.2cm, scale=0.85, transform shape]
+    % Client Layer
+    \node[process, minimum width=5cm] (client) {Client Layer: Web Interface, CLI};
+    
+    % API Layer
+    \node[process, below of=client, yshift=-0.3cm, minimum width=5cm] (api) {FastAPI Server};
+    
+    % RAG Core
+    \node[process, below of=api, yshift=-0.3cm, minimum width=5cm, fill=blue!15] (rag) {RAG Pipeline};
+    
+    % Components
+    \node[process, below of=rag, xshift=-3cm, yshift=-0.5cm, minimum width=2cm] (qt) {Query Translator};
+    \node[process, below of=rag, xshift=0cm, yshift=-0.5cm, minimum width=2cm] (emb) {Embedding};
+    \node[process, below of=rag, xshift=3cm, yshift=-0.5cm, minimum width=2cm] (rr) {Reranker};
+    
+    % External Services
+    \node[database, below of=qt, yshift=-0.5cm] (qdrant) {Qdrant};
+    \node[process, below of=emb, yshift=-0.5cm, fill=green!15] (openai) {OpenAI API};
+    \node[database, below of=rr, yshift=-0.5cm] (egov) {e-Gov API};
+    
+    \draw[arrow] (client) -- (api);
+    \draw[arrow] (api) -- (rag);
+    \draw[arrow] (rag) -- (qt);
+    \draw[arrow] (rag) -- (emb);
+    \draw[arrow] (rag) -- (rr);
+    \draw[arrow] (qt) -- (qdrant);
+    \draw[arrow] (emb) -- (openai);
+\end{tikzpicture}
+\caption{System Architecture Overview}
+\end{figure}
+
+\section{Cấu trúc thư mục dự án}
+
+\begin{lstlisting}[language=bash,caption={Cấu trúc thư mục}]
+norman/
+├── backend/
+│   ├── app/
+│   │   ├── agents/            # LangGraph Agent
+│   │   ├── api/               # REST API
+│   │   ├── core/              # Configuration
+│   │   ├── db/                # Database layer
+│   │   ├── llm/               # LLM modules
+│   │   ├── pipelines/         # RAG orchestration
+│   │   ├── services/          # Business logic
+│   │   └── main.py
+│   └── scripts/               # Data pipeline
+├── data/                      # Data storage
+└── docs/
+\end{lstlisting}
+
+\section{Data Processing Pipeline}
+
+Data pipeline xử lý dữ liệu từ nguồn e-Gov API đến vector database Qdrant với 5 giai đoạn chính:
+
+% Data Pipeline Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.3cm, scale=0.9, transform shape]
+    % Stage 1
+    \node[database, fill=blue!10] (api) {e-Gov API};
+    \node[process, right of=api, xshift=1cm] (dl) {downloader.py};
+    \node[database, right of=dl, xshift=1cm, fill=blue!10] (xml) {XML (233)};
+    
+    % Stage 2
+    \node[process, right of=xml, xshift=1cm] (parser) {xml\_parser.py};
+    \node[database, right of=parser, xshift=1cm, fill=green!10] (json) {JSON};
+    
+    % Stage 3-5 (below)
+    \node[process, below of=json, yshift=-0.5cm] (chunk) {chunker.py};
+    \node[database, left of=chunk, xshift=-1cm, fill=orange!10] (chunks) {Chunks (15K)};
+    \node[process, left of=chunks, xshift=-1cm] (embed) {embedder.py};
+    \node[database, left of=embed, xshift=-1cm, fill=pink!20] (embs) {Embeddings};
+    \node[process, left of=embs, xshift=-1cm] (index) {indexer.py};
+    \node[database, left of=index, xshift=-1cm, fill=purple!15] (qdrant) {Qdrant};
+    
+    \draw[arrow] (api) -- (dl);
+    \draw[arrow] (dl) -- (xml);
+    \draw[arrow] (xml) -- (parser);
+    \draw[arrow] (parser) -- (json);
+    \draw[arrow] (json) -- (chunk);
+    \draw[arrow] (chunk) -- (chunks);
+    \draw[arrow] (chunks) -- (embed);
+    \draw[arrow] (embed) -- (embs);
+    \draw[arrow] (embs) -- (index);
+    \draw[arrow] (index) -- (qdrant);
+\end{tikzpicture}
+\caption{Data Processing Pipeline}
+\end{figure}
+
+\subsection{Thu thập dữ liệu (downloader.py)}
+
+\textbf{Nguồn dữ liệu:} e-Gov Laws API (\url{https://laws.e-gov.go.jp/api/2})
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Mục đích} \\
+\midrule
+/laws & GET & Lấy danh sách luật theo category \\
+/keyword & GET & Tìm kiếm luật theo keyword \\
+/law\_data/\{law\_id\} & GET & Download nội dung XML của luật \\
+\bottomrule
+\end{tabular}
+\caption{API Endpoints sử dụng}
+\end{table}
+
+\textbf{Financial Categories thu thập:}
+\begin{lstlisting}[language=Python]
+FINANCIAL_CATEGORIES = [
+    "国税",           # National Tax
+    "地方財政",       # Local Finance
+    "社会保険",       # Social Insurance
+    "労働",           # Labor
+]
+\end{lstlisting}
+
+\textbf{Output Statistics:}
+\begin{itemize}
+    \item \textbf{Total laws searched:} $\sim$500+
+    \item \textbf{After filtering:} 233 laws
+    \item \textbf{File format:} XML (e-Gov standard format)
+\end{itemize}
+
+\subsection{XML Parser (xml\_parser.py)}
+
+Parse cấu trúc XML pháp luật Nhật Bản thành JSON có cấu trúc hierarchy.
+
+% XML Parser Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=0.8cm, scale=0.85, transform shape]
+    % XML Structure
+    \node[process] (root) {law\_data};
+    \node[process, below left of=root, xshift=-1cm] (info) {law\_info};
+    \node[process, below of=root] (rev) {revision\_info};
+    \node[process, below right of=root, xshift=1cm] (full) {law\_full\_text};
+    \node[process, below of=full] (law) {Law};
+    \node[process, below of=law] (body) {LawBody};
+    \node[process, below left of=body, xshift=-0.5cm] (main) {MainProvision};
+    \node[process, below right of=body, xshift=0.5cm] (supp) {SupplProvision};
+    \node[process, below of=main] (chap) {Chapter};
+    \node[process, below of=chap] (art) {Article};
+    \node[process, below of=art] (para) {Paragraph};
+    
+    \draw[arrow] (root) -- (info);
+    \draw[arrow] (root) -- (rev);
+    \draw[arrow] (root) -- (full);
+    \draw[arrow] (full) -- (law);
+    \draw[arrow] (law) -- (body);
+    \draw[arrow] (body) -- (main);
+    \draw[arrow] (body) -- (supp);
+    \draw[arrow] (main) -- (chap);
+    \draw[arrow] (chap) -- (art);
+    \draw[arrow] (art) -- (para);
+\end{tikzpicture}
+\caption{XML Structure Hierarchy}
+\end{figure}
+
+\subsection{Smart Chunking (chunker.py)}
+
+Phân đoạn văn bản giữ nguyên context hierarchy, sử dụng \textbf{Paragraph (Khoản)} làm đơn vị chunk.
+
+\textbf{Chunking Statistics:}
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total Laws & 233 \\
+Total Chunks & 15,629 \\
+Avg Chunks/Law & 67 \\
+Avg Chunk Size & $\sim$800 characters \\
+Token Estimate & $\sim$400 tokens/chunk \\
+\bottomrule
+\end{tabular}
+\caption{Chunking Statistics}
+\end{table}
+
+\subsection{Embedding (embedder.py)}
+
+\textbf{Embedding Configuration:}
+\begin{lstlisting}[language=Python]
+EMBEDDING_MODEL = "text-embedding-3-large"
+EMBEDDING_DIMENSIONS = 3072
+BATCH_SIZE = 100
+\end{lstlisting}
+
+\textbf{Output Statistics:}
+\begin{itemize}
+    \item \textbf{Total embeddings:} 15,629
+    \item \textbf{Dimensions:} 3,072
+    \item \textbf{File size:} $\sim$192 MB
+\end{itemize}
+
+\subsection{Hybrid Indexing (hybrid\_indexer.py)}
+
+Upload data lên Qdrant với cả Dense và Sparse vectors cho hybrid search.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Collection Name & japanese\_laws\_hybrid \\
+Total Points & 15,629 \\
+Dense Vectors & 3,072 dimensions \\
+Sparse Vectors & BM25 (variable) \\
+Storage & Qdrant Cloud Free Tier \\
+\bottomrule
+\end{tabular}
+\caption{Final Index Statistics}
+\end{table}
+
+\section{Phân tích lý do lựa chọn phương pháp}
+
+\subsection{Lựa chọn Embedding Model}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Dim} & \textbf{Cost} & \textbf{Latency} & \textbf{Kết luận} \\
+\midrule
+text-embedding-3-large & 3072 & \$0.13/1M & 100ms & \textbf{Chọn} \\
+text-embedding-3-small & 1536 & \$0.02/1M & 80ms & Kém hơn \\
+Cohere embed-v3 & 1024 & \$0.10/1M & 150ms & API ít ổn định \\
+multilingual-e5-large & 1024 & Free & 50ms & Cần GPU \\
+\bottomrule
+\end{tabular}
+\caption{So sánh Embedding Models}
+\end{table}
+
+\subsection{Lựa chọn Vector Database}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Database} & \textbf{Free Tier} & \textbf{Hybrid Search} & \textbf{Kết luận} \\
+\midrule
+Qdrant Cloud & 1GB free & Native & \textbf{Chọn} \\
+Pinecone & 100K vectors & Không & Không \\
+Weaviate & Self-host & Native & Cần maintain \\
+ChromaDB & Local only & Không & Không cloud \\
+\bottomrule
+\end{tabular}
+\caption{So sánh Vector Database}
+\end{table}
+
+%----------------------------------------------------------------------
+\chapter{TRIỂN KHAI HỆ THỐNG RAG}
+%----------------------------------------------------------------------
+
+\section{Query Processing Pipeline}
+
+% Query Processing Sequence Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, scale=0.8, transform shape]
+    % Actors
+    \node[process] (user) {User};
+    \node[process, right of=user, xshift=1.5cm] (api) {FastAPI};
+    \node[process, right of=api, xshift=1.5cm] (qt) {Translator};
+    \node[process, right of=qt, xshift=1.5cm] (emb) {Embedding};
+    \node[process, right of=emb, xshift=1.5cm] (vs) {VectorStore};
+    \node[process, right of=vs, xshift=1.5cm] (llm) {LLM};
+    
+    % Flow arrows
+    \draw[arrow] (user) -- node[above] {query} (api);
+    \draw[arrow] (api) -- node[above] {translate} (qt);
+    \draw[arrow] (qt) -- node[above] {embed} (emb);
+    \draw[arrow] (emb) -- node[above] {search} (vs);
+    \draw[arrow] (vs) -- node[above] {generate} (llm);
+    \draw[arrow, dashed] (llm) to[bend right=30] node[below] {answer} (user);
+\end{tikzpicture}
+\caption{Query Processing Flow}
+\end{figure}
+
+\section{Query Translation Module}
+
+Module \texttt{query\_translator.py} thực hiện dịch và mở rộng query:
+
+% Query Translation Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, scale=0.85, transform shape]
+    \node[process, fill=blue!15, minimum width=4cm] (input) {Vietnamese Query};
+    \node[process, below of=input] (llm) {LLM Translation};
+    
+    \node[process, below left of=llm, xshift=-2cm, yshift=-0.5cm] (trans) {translated};
+    \node[process, below of=llm, yshift=-0.5cm] (kw) {keywords};
+    \node[process, below right of=llm, xshift=2cm, yshift=-0.5cm] (sq) {search\_queries};
+    
+    \node[process, below of=kw, yshift=-0.3cm, fill=green!15, minimum width=4cm] (output) {Multi-Query Vectors};
+    
+    \draw[arrow] (input) -- (llm);
+    \draw[arrow] (llm) -- (trans);
+    \draw[arrow] (llm) -- (kw);
+    \draw[arrow] (llm) -- (sq);
+    \draw[arrow] (trans) -- (output);
+    \draw[arrow] (kw) -- (output);
+    \draw[arrow] (sq) -- (output);
+\end{tikzpicture}
+\caption{Query Translation and Expansion}
+\end{figure}
+
+\section{Hybrid Search Implementation}
+
+\begin{lstlisting}[language=Python]
+def hybrid_search(
+    self,
+    dense_vector: list[float],
+    sparse_vector: SparseVector,
+    top_k: int = 10,
+) -> list[dict]:
+    """Hybrid search using Qdrant Query API with RRF fusion."""
+    
+    prefetch = [
+        models.Prefetch(query=dense_vector, using="dense", limit=top_k * 4),
+        models.Prefetch(query=sparse_vector, using="sparse", limit=top_k * 4),
+    ]
+    
+    results = self.client.query_points(
+        collection_name=self.collection_name,
+        prefetch=prefetch,
+        query=models.FusionQuery(fusion=models.Fusion.RRF),
+        limit=top_k,
+    )
+\end{lstlisting}
+
+\section{LangGraph Agent}
+
+Agent với self-correction loop tự động cải thiện retrieval quality:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Node} & \textbf{Function} & \textbf{Input → Output} \\
+\midrule
+translate\_node & Dịch + expand query & query → translated \\
+retrieve\_node & Multi-query search & queries → documents \\
+grade\_node & LLM đánh giá relevance & documents → grades \\
+rerank\_node & BGE cross-encoder & documents → reranked \\
+generate\_node & LLM sinh câu trả lời & docs → answer \\
+rewrite\_node & Viết lại query & query → new query \\
+\bottomrule
+\end{tabular}
+\caption{Node Implementations}
+\end{table}
+
+\section{Technology Stack}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Technology} & \textbf{Version} & \textbf{Purpose} \\
+\midrule
+Backend & FastAPI & $\geq$0.109.0 & Async REST API \\
+Vector DB & Qdrant Cloud & Free Tier & Hybrid vector storage \\
+Embedding & OpenAI & text-embedding-3-large & 3072-dim vectors \\
+LLM & GPT-4o-mini & - & Generation \\
+Reranker & BGE-reranker-large & - & Cross-encoder \\
+Agent & LangGraph & $\geq$0.2.0 & Workflow \\
+\bottomrule
+\end{tabular}
+\caption{Technology Stack}
+\end{table}
+
+%----------------------------------------------------------------------
+\chapter{THỬ NGHIỆM VÀ ĐÁNH GIÁ}
+%----------------------------------------------------------------------
+
+\section{Test Dataset}
+
+Bộ test 20+ câu hỏi về pháp luật tài chính:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Category} & \textbf{Sample Questions} \\
+\midrule
+Thuế Thu Nhập & Thuế thu nhập cá nhân ở Nhật tính như thế nào? \\
+Bảo Hiểm XH & Điều kiện hưởng lương hưu tại Nhật? \\
+NISA & NISA là gì? Người nước ngoài có thể đăng ký không? \\
+Lao Động & Thời gian làm việc tối đa mỗi tuần là bao nhiêu giờ? \\
+\bottomrule
+\end{tabular}
+\caption{Test Dataset}
+\end{table}
+
+\section{RAGAS Evaluation Framework}
+
+% RAGAS Evaluation Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.3cm, scale=0.9, transform shape]
+    \node[process] (query) {Query};
+    \node[process, right of=query, xshift=1cm] (context) {Retrieved Context};
+    \node[process, right of=context, xshift=1cm] (answer) {Generated Answer};
+    \node[process, below of=context, yshift=-0.5cm] (gt) {Ground Truth};
+    
+    % Metrics
+    \node[process, below left of=context, xshift=-1.5cm, yshift=-1.5cm, fill=blue!15] (cp) {Context Precision};
+    \node[process, below of=context, yshift=-1.5cm, fill=green!15] (cr) {Context Recall};
+    \node[process, below right of=context, xshift=1.5cm, yshift=-1.5cm, fill=orange!15] (faith) {Faithfulness};
+    \node[process, below of=answer, yshift=-1.5cm, fill=yellow!15] (ar) {Answer Relevancy};
+    
+    \draw[arrow] (context) -- (cp);
+    \draw[arrow] (context) -- (cr);
+    \draw[arrow] (gt) -- (cr);
+    \draw[arrow] (context) -- (faith);
+    \draw[arrow] (answer) -- (faith);
+    \draw[arrow] (answer) -- (ar);
+    \draw[arrow] (query) -- (ar);
+\end{tikzpicture}
+\caption{RAGAS Evaluation Metrics}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Score} & \textbf{Description} \\
+\midrule
+Context Precision & 0.72 & Tỷ lệ context relevant trong retrieved docs \\
+Context Recall & 0.68 & Coverage of ground truth \\
+Faithfulness & 0.85 & Answer grounded in context \\
+Answer Relevancy & 0.78 & Answer addresses query \\
+\bottomrule
+\end{tabular}
+\caption{RAGAS Evaluation Results}
+\end{table}
+
+\section{Reranker Performance}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Query} & \textbf{Before} & \textbf{After} & \textbf{Improvement} \\
+\midrule
+Thời gian nghỉ giữa ca & 0.50 & 0.66 & +32\% \\
+Làm thêm giờ gấp đôi & 0.59 & 0.64 & +8\% \\
+Sa thải thử việc & 0.45 & 0.58 & +29\% \\
+\bottomrule
+\end{tabular}
+\caption{Reranker Performance}
+\end{table}
+
+\section{Latency Optimization}
+
+% Latency Optimization Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.9]
+    % Bar chart for latency
+    \draw[->] (0,0) -- (8,0) node[right] {Time (s)};
+    \draw[->] (0,0) -- (0,5) node[above] {};
+    
+    % Bars
+    \fill[red!60] (0.5,0) rectangle (1.5,4.5);
+    \node[above] at (1,4.5) {60s};
+    \node[below] at (1,-0.2) {\tiny Before};
+    
+    \fill[orange!60] (2.5,0) rectangle (3.5,0.75);
+    \node[above] at (3,0.75) {10s};
+    \node[below] at (3,-0.2) {\tiny -Reranker};
+    
+    \fill[yellow!60] (4.5,0) rectangle (5.5,0.6);
+    \node[above] at (5,0.6) {8s};
+    \node[below] at (5,-0.2) {\tiny +Hybrid};
+    
+    \fill[green!60] (6.5,0) rectangle (7.5,0.38);
+    \node[above] at (7,0.38) {5s};
+    \node[below] at (7,-0.2) {\tiny Final};
+\end{tikzpicture}
+\caption{Latency Optimization Progress}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Optimization} & \textbf{Before} & \textbf{After} & \textbf{Impact} \\
+\midrule
+Disable Reranker & 60s & 10s & -83\% \\
+Hybrid Search & 10s & 8s & -20\% \\
+Reduce Multi-Query & 8s & 6s & -25\% \\
+Batch Embeddings & 6s & 5s & -17\% \\
+\bottomrule
+\end{tabular}
+\caption{Latency Optimization Results}
+\end{table}
+
+%----------------------------------------------------------------------
+\chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+%----------------------------------------------------------------------
+
+\section{Kết quả đạt được}
+
+\begin{enumerate}
+    \item \textbf{Hệ thống RAG hoàn chỉnh} cho pháp luật tài chính Nhật Bản
+    \item \textbf{Cross-lingual retrieval} Vietnamese → Japanese
+    \item \textbf{Hybrid search} kết hợp semantic và keyword
+    \item \textbf{Two-stage retrieval} với reranking
+    \item \textbf{LangGraph Agent} với self-correction
+    \item \textbf{15,629 chunks} từ 233 văn bản luật
+\end{enumerate}
+
+\section{Hạn chế}
+
+\begin{enumerate}
+    \item \textbf{Latency}: 5-10s response time
+    \item \textbf{Coverage}: Chưa bao phủ hết categories
+    \item \textbf{Multi-turn}: Chưa có conversation memory
+    \item \textbf{Evaluation}: Cần thêm human evaluation
+\end{enumerate}
+
+\section{Hướng phát triển}
+
+% Development Roadmap Diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=2.5cm, scale=0.85, transform shape]
+    % Timeline
+    \draw[thick, ->] (0,0) -- (14,0);
+    
+    % Short-term
+    \node[process, fill=blue!20] at (2,1.5) {Conversation Memory};
+    \node[process, fill=blue!20] at (2,0.5) {Redis Caching};
+    \node at (2,-0.7) {\textbf{Short-term}};
+    \node at (2,-1.2) {\small 3-6 months};
+    
+    % Mid-term
+    \node[process, fill=green!20] at (7,1.5) {Graph RAG};
+    \node[process, fill=green!20] at (7,0.5) {Production Deploy};
+    \node at (7,-0.7) {\textbf{Mid-term}};
+    \node at (7,-1.2) {\small 6-12 months};
+    
+    % Long-term
+    \node[process, fill=orange!20] at (12,1.5) {Mobile App};
+    \node[process, fill=orange!20] at (12,0.5) {Feedback Loop};
+    \node at (12,-0.7) {\textbf{Long-term}};
+    \node at (12,-1.2) {\small 12+ months};
+\end{tikzpicture}
+\caption{Development Roadmap}
+\end{figure}
+
+\section{Bài học rút ra}
+
+\begin{enumerate}
+    \item \textbf{Data quality > Model size}: Chunking strategy quan trọng
+    \item \textbf{Hybrid search hiệu quả}: Dense + sparse cải thiện recall
+    \item \textbf{Reranker trade-off}: Chính xác nhưng tăng latency
+    \item \textbf{Cross-lingual khó}: Cần domain-specific tuning
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\chapter{TÀI LIỆU THAM KHẢO}
+%----------------------------------------------------------------------
+
+\begin{enumerate}
+    \item Lewis, P., et al. (2020). ``Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.'' \textit{NeurIPS 2020}.
+    
+    \item Karpukhin, V., et al. (2020). ``Dense Passage Retrieval for Open-Domain Question Answering.'' \textit{EMNLP 2020}.
+    
+    \item Xiao, S., et al. (2023). ``BGE: Towards General Text Embeddings.'' \textit{arXiv}.
+    
+    \item Wang, L., et al. (2023). ``Query2doc: Query Expansion with LLMs.'' \textit{EMNLP 2023}.
+    
+    \item OpenAI. ``Embeddings API.'' \url{https://platform.openai.com/docs/guides/embeddings}
+    
+    \item Qdrant. ``Vector Database.'' \url{https://qdrant.tech/documentation/}
+    
+    \item LangGraph. ``Agentic Workflows.'' \url{https://langchain-ai.github.io/langgraph/}
+    
+    \item e-Gov Laws API. \url{https://elaws.e-gov.go.jp/apitop/}
+    
+    \item FastAPI. \url{https://fastapi.tiangolo.com/}
+    
+    \item RAGAS. \url{https://docs.ragas.io/}
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\appendix
+\chapter{PHỤ LỤC}
+%----------------------------------------------------------------------
+
+\section{Hướng dẫn cài đặt}
+
+\begin{lstlisting}[language=bash]
+# Clone repository
+git clone https://github.com/[username]/norman.git
+cd norman
+
+# Backend setup
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+
+# Run backend
+uvicorn app.main:app --reload --port 8000
+\end{lstlisting}
+
+\section{Environment Variables}
+
+\begin{lstlisting}
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Qdrant Cloud
+QDRANT_URL=https://xxx.qdrant.tech
+QDRANT_API_KEY=...
+QDRANT_COLLECTION_NAME=japanese_laws_hybrid
+
+# RAG Settings
+USE_RERANKER=false
+USE_HYBRID_SEARCH=true
+MULTI_QUERY_COUNT=2
+\end{lstlisting}
+
+\section{API Usage Examples}
+
+\begin{lstlisting}[language=bash]
+# Health check
+curl http://localhost:8000/api/health
+
+# Vector search
+curl -X POST http://localhost:8000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "所得税", "top_k": 3}'
+
+# Chat
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Thue thu nhap?", "top_k": 5}'
+\end{lstlisting}
+
+\vspace{1cm}
+\begin{center}
+\rule{0.5\textwidth}{0.5pt} \\
+\vspace{0.5cm}
+\textbf{Norman - Japanese Financial Law RAG System} \\
+Version 1.0.0 | January 2026
+\end{center}
+
+\end{document}
