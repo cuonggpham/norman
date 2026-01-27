@@ -26,10 +26,14 @@ class Settings(BaseSettings):
     qdrant_api_key: str = ""
     qdrant_collection_name: str = "japanese_laws"
     
-    # Neo4j (Phase 4)
-    neo4j_uri: str = "bolt://localhost:7687"
+    # Neo4j (GraphRAG)
+    neo4j_uri: str = ""
     neo4j_user: str = "neo4j"
     neo4j_password: str = ""
+    neo4j_database: str = "neo4j"
+    
+    # Google Gemini (for translation)
+    gemini_api_key: str = ""
     
     # API Settings
     cors_origins: list[str] = ["*"]

@@ -91,7 +91,7 @@ class BGEReranker:
         
         # Compute scores
         try:
-            scores = self.model.compute_score(pairs, normalize=True)
+            scores = self.model.compute_score(pairs, normalize=False)
         except Exception as e:
             logger.error(f"Reranking failed: {e}")
             return documents[:top_k]
@@ -99,6 +99,13 @@ class BGEReranker:
         # Handle single document case
         if not isinstance(scores, list):
             scores = [scores]
+        
+        # Convert logits to probabilities using sigmoid
+        import math
+        def sigmoid(x):
+            return 1 / (1 + math.exp(-x))
+        
+        scores = [sigmoid(s) for s in scores]
         
         # Combine with original documents
         scored_docs = []

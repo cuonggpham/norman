@@ -71,8 +71,31 @@ export async function healthCheck() {
     return response.json();
 }
 
+/**
+ * Translate Japanese legal text to Vietnamese using Gemini 2.5 Flash
+ * @param {string} text - Japanese text to translate
+ * @returns {Promise<Object>} Translation result with original and translated text
+ */
+export async function translate(text) {
+    const response = await fetch(`${API_BASE}/translate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Translation request failed');
+    }
+
+    return response.json();
+}
+
 export default {
     chat,
     search,
     healthCheck,
+    translate,
 };

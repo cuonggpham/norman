@@ -11,6 +11,28 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Active state when clicked from inline citation */
+.source-card--active {
+    border-color: var(--color-accent, #f0b429);
+    box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.2), var(--shadow-md);
+    animation: sourceActivePulse 0.6s ease-out;
+}
+
+@keyframes sourceActivePulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.01);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ==================== Header ==================== */
 .source-card__header {
     width: 100%;
     display: flex;
@@ -110,6 +132,78 @@
     animation: slide-up 0.2s ease;
 }
 
+/* ==================== Metadata Section ==================== */
+.source-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+    margin-bottom: var(--spacing-sm);
+}
+
+.source-card__meta-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.source-card__meta-label {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 70px;
+}
+
+.source-card__meta-value {
+    font-size: 0.75rem;
+    color: var(--color-text);
+}
+
+.source-card__law-id {
+    font-family: 'SF Mono', monospace;
+    background: var(--color-bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+
+/* ==================== Hierarchy Path ==================== */
+.source-card__hierarchy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.source-card__hierarchy-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.source-card__hierarchy-label {
+    font-size: 0.6rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.source-card__hierarchy-value {
+    font-size: 0.7rem;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.source-card__hierarchy-separator {
+    color: var(--color-text-muted);
+    margin: 0 4px;
+}
+
+/* Legacy path support */
 .source-card__path {
     font-size: 0.65rem;
     color: var(--color-primary);
@@ -121,11 +215,32 @@
     display: inline-block;
 }
 
+/* ==================== Text Section ==================== */
+.source-card__text-section {
+    margin-top: var(--spacing-sm);
+}
+
+.source-card__text-label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.source-card__text-wrapper {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    border-left: 3px solid var(--color-primary);
+}
+
 .source-card__text {
     font-size: 0.8rem;
     line-height: 1.65;
     color: var(--color-text-muted);
-    margin: var(--spacing-sm) 0 0;
+    margin: 0;
     white-space: pre-wrap;
 }
 
@@ -154,7 +269,112 @@
         font-size: 0.8rem;
     }
 
-    .source-card__score {
-        width: 40px;
+    .source-card__hierarchy {
+        flex-direction: column;
+        align-items: flex-start;
     }
+
+    .source-card__hierarchy-separator {
+        display: none;
+    }
+
+    .source-card__score-bar-container {
+        max-width: 100px;
+    }
+}
+
+/* ==================== Translation Feature ==================== */
+.source-card__text-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xs);
+}
+
+.source-card__translate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark, #3b82f6));
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.source-card__translate-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.source-card__translate-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.source-card__translate-btn--done {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.source-card__translate-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.source-card__translate-error {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md);
+    color: #ef4444;
+    font-size: 0.75rem;
+}
+
+.source-card__translated-section {
+    margin-top: var(--spacing-md);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.source-card__text-label--vietnamese {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.source-card__text-wrapper--translated {
+    border-left-color: #10b981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+}
+
+.source-card__text--translated {
+    color: var(--color-text);
 }

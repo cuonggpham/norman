@@ -14,6 +14,38 @@ from app.db.qdrant import (
 )
 
 
+def _normalize_rrf_scores(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Normalize RRF scores to 0-1 range.
+    
+    Qdrant RRF uses 1/(k + rank) formula which gives scores like:
+    - Rank 1: 0.5 (with k=1)
+    - Rank 2: 0.333
+    - Rank 3: 0.25
+    
+    This normalizes them so first result = 1.0 and scales others proportionally.
+    """
+    if not results:
+        return results
+    
+    # Get max score for normalization
+    max_score = max(r.get("score", 0) for r in results)
+    
+    if max_score <= 0:
+        return results
+    
+    # Normalize all scores to 0-1 range relative to max
+    normalized = []
+    for r in results:
+        r_copy = r.copy()
+        original_score = r.get("score", 0)
+        r_copy["score"] = original_score / max_score
+        r_copy["original_rrf_score"] = original_score
+        normalized.append(r_copy)
+    
+    return normalized
+
+
 class QdrantHybridStore:
     """
     Wrapper class for Qdrant hybrid search.
@@ -62,6 +94,7 @@ class QdrantHybridStore:
         Perform hybrid search combining dense and sparse vectors.
         
         Uses RRF (Reciprocal Rank Fusion) to merge results.
+        Scores are normalized to 0-1 range (highest = 1.0).
         
         Args:
             dense_vector: Dense query embedding
@@ -72,7 +105,7 @@ class QdrantHybridStore:
         Returns:
             List of results with id, score, payload
         """
-        return qdrant_hybrid_search(
+        results = qdrant_hybrid_search(
             client=self.client,
             dense_vector=dense_vector,
             sparse_vector=sparse_vector,
@@ -81,3 +114,7 @@ class QdrantHybridStore:
             filter_conditions=filters,
             prefetch_limit=self.prefetch_limit,
         )
+        
+        # Normalize RRF scores to 0-1 range
+        return _normalize_rrf_scores(results)
+

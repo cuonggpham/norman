@@ -97,6 +97,35 @@
     line-height: 1.6;
 }
 
+/* ==================== Inline Citations ==================== */
+.chat-message__citation {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: none;
+    margin: 0 1px;
+    vertical-align: middle;
+    line-height: 1;
+    transition: all var(--transition-base);
+    text-decoration: none;
+}
+
+.chat-message__citation:hover {
+    background: var(--color-primary-dark, #2563eb);
+    transform: scale(1.1);
+}
+
+.chat-message__citation:active {
+    transform: scale(0.95);
+}
+
 /* ==================== Code ==================== */
 .chat-message__code {
     background: var(--color-bg-tertiary);

@@ -39,6 +39,25 @@ class ChatQuery(BaseModel):
         }
 
 
+class TranslateRequest(BaseModel):
+    """Translation request body."""
+    text: str = Field(..., description="Japanese text to translate to Vietnamese")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "text": "使用者は、労働者に、休憩時間を除き一週間について四十時間を超えて、労働させてはならない。"
+            }
+        }
+
+
+class TranslateResponse(BaseModel):
+    """Translation response body."""
+    original: str
+    translated: str
+    processing_time_ms: float = Field(default=0.0)
+
+
 # ============== Response Schemas ==============
 
 class SearchResult(BaseModel):
@@ -70,6 +89,11 @@ class SourceDocument(BaseModel):
     text: str
     score: float
     highlight_path: dict = Field(default_factory=dict)
+    # Additional structured metadata
+    law_id: Optional[str] = None
+    chapter_title: Optional[str] = None
+    article_caption: Optional[str] = None
+    paragraph_num: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
