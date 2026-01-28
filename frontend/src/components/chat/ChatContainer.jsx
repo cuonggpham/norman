@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -6,19 +6,28 @@ import { chat } from '../../services/api';
 import './ChatContainer.css';
 
 const EXAMPLE_PROMPTS = [
-    'Quy định về thời gian làm việc theo Luật Lao động Nhật Bản?',
-    'Thời hạn thuê nhà theo pháp luật Nhật Bản là bao lâu?',
-    'Điều kiện để thành lập công ty tại Nhật Bản?',
+    'Thuế thu nhập cá nhân ở Nhật tính như thế nào?',
+    'Bảo hiểm y tế ở Nhật có những loại nào?',
+    'Thu nhập từ tiền mã hóa có phải đóng thuế không?',
 ];
 
 /**
  * Main chat container with message history and input
+ * Exposes resetChat method via ref
  */
-export default function ChatContainer() {
+const ChatContainer = forwardRef(function ChatContainer(props, ref) {
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const messagesEndRef = useRef(null);
+
+    // Expose resetChat method to parent
+    useImperativeHandle(ref, () => ({
+        resetChat: () => {
+            setMessages([]);
+            setError(null);
+        }
+    }));
 
     // Auto-scroll to bottom on new messages
     useEffect(() => {
@@ -132,4 +141,6 @@ export default function ChatContainer() {
             <ChatInput onSend={handleSend} isLoading={isLoading} />
         </div>
     );
-}
+});
+
+export default ChatContainer;

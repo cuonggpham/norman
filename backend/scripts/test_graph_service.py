@@ -72,7 +72,7 @@ def test_related_articles():
     LIMIT 1
     """
     
-    from app.db.neo4j_client import get_neo4j_client
+    from app.db.neo4j import get_neo4j_client
     client = get_neo4j_client()
     results = client.run_query(test_query)
     
@@ -148,7 +148,7 @@ def test_law_structure():
     service = get_graph_service()
     
     # First find a law
-    from app.db.neo4j_client import get_neo4j_client
+    from app.db.neo4j import get_neo4j_client
     client = get_neo4j_client()
     results = client.run_query(
         "MATCH (l:Law) WHERE l.title CONTAINS '労働基準' RETURN l.law_id LIMIT 1"

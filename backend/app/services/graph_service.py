@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 import logging
 import re
 
-from app.db.neo4j_client import get_neo4j_client, Neo4jClient
+from app.db.neo4j import get_neo4j_client, Neo4jClient
 
 logger = logging.getLogger(__name__)
 

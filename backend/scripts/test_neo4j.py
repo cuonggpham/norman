@@ -10,7 +10,7 @@ from pathlib import Path
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.db.neo4j_client import get_neo4j_client
+from app.db.neo4j import get_neo4j_client
 from app.core.config import get_settings
 
 
