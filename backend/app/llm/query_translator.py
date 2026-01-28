@@ -8,7 +8,9 @@ against Japanese legal documents.
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable
+
+from app.services.query_cache import CachedExpansion, get_query_cache
 
 logger = logging.getLogger(__name__)
 
@@ -105,16 +107,31 @@ class QueryTranslator:
         
         return translated.strip()
     
-    def expand(self, query: str) -> QueryExpansion:
+    def expand(self, query: str, use_cache: bool = True) -> QueryExpansion:
         """
         Expand query with keywords and multiple search queries.
         
         Args:
             query: Vietnamese query string
+            use_cache: If True, check cache before LLM call (default: True)
             
         Returns:
             QueryExpansion with translated query, keywords, and search queries
         """
+        # ⚡ CACHE: Check cache first
+        if use_cache:
+            cache = get_query_cache()
+            cached = cache.get(query)
+            if cached:
+                logger.info(f"[CACHE HIT] Using cached expansion for: {query[:40]}...")
+                return QueryExpansion(
+                    original=cached.original,
+                    translated=cached.translated,
+                    keywords=cached.keywords,
+                    related_terms=cached.related_terms,
+                    search_queries=cached.search_queries,
+                )
+        
         # If already Japanese, still extract keywords
         messages = [
             {"role": "system", "content": QUERY_EXPANSION_SYSTEM},
@@ -135,17 +152,30 @@ class QueryTranslator:
             
             data = json.loads(response)
             
-            return QueryExpansion(
+            expansion = QueryExpansion(
                 original=query,
-                translated=data.get("translated", query),  # ⚡ OPTIMIZATION: Use query directly, no fallback LLM call
+                translated=data.get("translated", query),
                 keywords=data.get("keywords", []),
                 related_terms=data.get("related_terms", []),
                 search_queries=data.get("search_queries", []),
             )
+            
+            # ⚡ CACHE: Store result
+            if use_cache:
+                cache = get_query_cache()
+                cache.set(query, CachedExpansion(
+                    original=expansion.original,
+                    translated=expansion.translated,
+                    keywords=expansion.keywords,
+                    related_terms=expansion.related_terms,
+                    search_queries=expansion.search_queries,
+                ))
+            
+            return expansion
+            
         except (json.JSONDecodeError, Exception) as e:
             logger.warning(f"Query expansion failed, using original query: {e}")
             # ⚡ OPTIMIZATION: Return original query directly without calling translate()
-            # This saves 1 LLM call. Most queries are already Japanese after initial detection.
             return QueryExpansion(
                 original=query,
                 translated=query,

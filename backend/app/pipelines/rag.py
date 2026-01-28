@@ -5,15 +5,16 @@ Inherits from BasePipeline for shared logic.
 Adds unique features:
 - search() method for vector-only search
 - Multi-query retrieval with deduplication
+- chat_stream() for streaming responses
 """
 
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Generator
 
 from app.pipelines.base import BasePipeline, QueryTranslator
-from app.models.schemas import ChatResponse, SearchResult
+from app.models.schemas import ChatResponse, SearchResult, SourceDocument
 
 logger = logging.getLogger(__name__)
 
@@ -194,6 +195,95 @@ class RAGPipeline(BasePipeline):
             query=query,
             processing_time_ms=elapsed,
         )
+    
+    def chat_stream(
+        self,
+        query: str,
+        top_k: int | None = None,
+        filters: dict[str, Any] | None = None,
+        use_multi_query: bool | None = None,
+        auto_filter: bool = False,
+        use_hybrid: bool | None = None,
+    ) -> Generator[str | dict, None, None]:
+        """
+        Streaming RAG: retrieve + generate with streaming response.
+        
+        ⚡ OPTIMIZATION: Streams LLM response for faster perceived latency.
+        
+        Yields:
+            First: dict with 'sources' and 'retrieval_time_ms'
+            Then: str chunks of the answer as they arrive
+        """
+        start_time = time.time()
+        top_k = top_k or self.default_top_k
+        multi_query = use_multi_query if use_multi_query is not None else self.use_multi_query
+        can_hybrid = (use_hybrid if use_hybrid is not None else self.use_hybrid_search) and self._can_hybrid()
+        
+        # Prepare filters
+        final_filters = dict(filters) if filters else {}
+        if auto_filter:
+            self._apply_auto_filter(query, final_filters)
+        
+        # Step 1-4: Retrieval (same as chat())
+        if multi_query:
+            search_texts = self._get_search_texts(query)
+        else:
+            search_texts = [self._translate_query(query)]
+        
+        all_dense_vectors, all_sparse_vectors = self._embed_queries(search_texts, can_hybrid)
+        
+        retrieve_k = top_k * self.retrieval_multiplier if self.reranker else top_k * 2
+        all_results = self._vector_search_multi(
+            search_texts, all_dense_vectors, all_sparse_vectors,
+            retrieve_k, final_filters if final_filters else None, can_hybrid
+        )
+        
+        filtered_results = self._filter_and_sort_results(all_results)
+        
+        if self.reranker:
+            final_results = self._rerank_results(query, filtered_results, top_k)
+        else:
+            final_results = filtered_results[:top_k]
+        
+        # Build context
+        context = self._build_context(final_results)
+        sources = [self._to_source_document(r) for r in final_results]
+        retrieval_time = (time.time() - start_time) * 1000
+        
+        # Yield sources first so UI can display them while streaming
+        yield {
+            "type": "sources",
+            "sources": sources,
+            "retrieval_time_ms": retrieval_time,
+        }
+        
+        # Step 5: Stream LLM response
+        if hasattr(self.llm, 'generate_stream'):
+            system_prompt = self._get_system_prompt()
+            context_str = "\n\n".join(context)
+            user_message = f"Context:\n{context_str}\n\nQuestion: {query}"
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
+            
+            for chunk in self.llm.generate_stream(messages):
+                yield chunk
+        else:
+            # Fallback to non-streaming
+            answer = self._generate_response(query, context)
+            yield answer
+    
+    def _get_system_prompt(self) -> str:
+        """Get system prompt for legal assistant."""
+        return """Bạn là trợ lý pháp luật Nhật Bản chuyên nghiệp.
+
+Quy tắc trả lời:
+1. Trả lời dựa trên context được cung cấp
+2. Trích dẫn nguồn bằng số [1], [2], etc.
+3. Nếu không tìm thấy thông tin, nói rõ
+4. Sử dụng tiếng Việt, giữ nguyên thuật ngữ pháp lý tiếng Nhật"""
     
     def _apply_auto_filter(self, query: str, filters: dict) -> None:
         """Apply auto-detected category filter."""
