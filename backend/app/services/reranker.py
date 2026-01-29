@@ -1,11 +1,12 @@
 """
-BGE Reranker Service using FlagEmbedding.
+Reranker Service using sentence-transformers CrossEncoder.
 
-Uses BAAI/bge-reranker-large cross-encoder for reranking search results.
+Uses cross-encoder/mmarco-mMiniLMv2-L12-H384-v1 for reranking search results.
 """
 
 import logging
 from typing import Any
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -15,25 +16,20 @@ _reranker_model = None
 
 class BGEReranker:
     """
-    BGE-based reranker for Japanese legal documents.
+    Reranker for Japanese/Multilingual documents using CrossEncoder.
     
-    Uses BAAI/bge-reranker-large cross-encoder model.
+    Uses cross-encoder/mmarco-mMiniLMv2-L12-H384-v1 model.
     Runs on CPU for systems without GPU.
-    
-    Example:
-        reranker = BGEReranker()
-        docs = [{"payload": {"text": "労働時間は1日8時間"}, "score": 0.8}]
-        reranked = reranker.rerank("working hours", docs, top_k=5)
     """
     
     def __init__(
         self,
-        model_name: str = "BAAI/bge-reranker-large",
-        use_fp16: bool = False,  # CPU doesn't support fp16 well
+        model_name: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+        use_fp16: bool = False,
         device: str = "cpu",
     ):
         """
-        Initialize BGE reranker.
+        Initialize Reranker.
         
         Args:
             model_name: HuggingFace model name
@@ -43,16 +39,16 @@ class BGEReranker:
         global _reranker_model
         
         if _reranker_model is None:
-            logger.warning(f"[HEAVY LOAD] Loading BGE reranker: {model_name} (device={device}) - ~1-2GB RAM")
-            from FlagEmbedding import FlagReranker
-            _reranker_model = FlagReranker(
+            logger.warning(f"[HEAVY LOAD] Loading Reranker: {model_name} (device={device})")
+            from sentence_transformers import CrossEncoder
+            _reranker_model = CrossEncoder(
                 model_name,
-                use_fp16=use_fp16,
                 device=device,
+                # default automodel checks available resources
             )
-            logger.info("✓ BGE reranker loaded successfully")
+            logger.info("✓ Reranker loaded successfully")
         else:
-            logger.info("Using existing BGE reranker instance (already in memory)")
+            logger.info("Using existing Reranker instance (already in memory)")
         
         self.model = _reranker_model
     
@@ -66,7 +62,7 @@ class BGEReranker:
         Rerank documents by relevance to query.
         
         Args:
-            query: Search query (Vietnamese or Japanese)
+            query: Search query
             documents: List of retrieved documents with 'payload' containing 'text'
             top_k: Number of top results to return
             
@@ -91,25 +87,31 @@ class BGEReranker:
         
         # Compute scores
         try:
-            scores = self.model.compute_score(pairs, normalize=False)
+            # CrossEncoder predict returns logits by default for this model
+            scores = self.model.predict(pairs)
         except Exception as e:
             logger.error(f"Reranking failed: {e}")
             return documents[:top_k]
         
         # Handle single document case
-        if not isinstance(scores, list):
+        if not isinstance(scores, (list, tuple)) and not getattr(scores, 'shape', None):
+             # numpy scalar or float
             scores = [scores]
-        
-        # Convert logits to probabilities using sigmoid
-        import math
+        elif hasattr(scores, 'tolist'):
+            scores = scores.tolist()
+            
+        if not isinstance(scores, list):
+             scores = [scores]
+
         def sigmoid(x):
             return 1 / (1 + math.exp(-x))
         
-        scores = [sigmoid(s) for s in scores]
+        # Apply sigmoid to normalize logits to probabilities [0, 1]
+        probs = [sigmoid(s) for s in scores]
         
         # Combine with original documents
         scored_docs = []
-        for (orig_idx, doc, _), score in zip(valid_pairs, scores):
+        for (orig_idx, doc, _), score in zip(valid_pairs, probs):
             doc_copy = doc.copy()
             doc_copy["rerank_score"] = float(score)
             doc_copy["original_score"] = doc.get("score", 0)
@@ -118,6 +120,14 @@ class BGEReranker:
         
         # Sort by rerank score
         scored_docs.sort(key=lambda x: x["rerank_score"], reverse=True)
+        
+        # Normalize scores to 0-1 range (best result = 1.0)
+        if scored_docs:
+            max_score = scored_docs[0]["rerank_score"]
+            if max_score > 0:
+                for doc in scored_docs:
+                    doc["raw_rerank_score"] = doc["rerank_score"]
+                    doc["score"] = doc["rerank_score"] / max_score
         
         logger.info(f"Reranked {len(scored_docs)} documents, returning top {top_k}")
         
@@ -129,7 +139,7 @@ _singleton_reranker = None
 
 
 def get_bge_reranker() -> BGEReranker:
-    """Get singleton BGE reranker instance."""
+    """Get singleton Reranker instance."""
     global _singleton_reranker
     if _singleton_reranker is None:
         _singleton_reranker = BGEReranker()

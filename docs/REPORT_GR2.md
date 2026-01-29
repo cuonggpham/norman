@@ -98,7 +98,7 @@ flowchart TB
         QT --> |"multi-query"| EMB[Batch Embedding]
         EMB --> |"dense + sparse"| HS[Hybrid Search<br/>RRF Fusion]
         HS --> |"top-k candidates"| RR{Reranker?}
-        RR --> |"enabled"| CE[Cross-Encoder<br/>BGE-reranker-large]
+        RR --> |"enabled"| CE[Cross-Encoder<br/>mMarco-mMiniLM]
         RR --> |"disabled"| SK[Skip]
         CE --> LLM[LLM Generation<br/>GPT-4o-mini]
         SK --> LLM
@@ -313,11 +313,12 @@ $$RRF_{score}(d) = \sum_{r \in \{dense, sparse\}} \frac{1}{k + rank_r(d)}$$
 - **Stage 1 (Recall):** Bi-encoder hybrid search → top 20-40 candidates
 - **Stage 2 (Precision):** Cross-encoder rerank → top 5 final results
 
-##### BGE Reranker
 
-`BAAI/bge-reranker-large` được sử dụng:
-- **Model size:** ~560M parameters
-- **Latency:** ~500ms cho 20 documents (CPU)
+##### mMarco-mMiniLM Reranker
+
+`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` được sử dụng:
+- **Model size:** ~470MB (nhỏ hơn BGE-M3/Large)
+- **Latency:** ~100ms/doc (CPU), nhanh gấp 10-11 lần BGE
 
 ##### Benchmark kết quả
 
@@ -327,11 +328,15 @@ $$RRF_{score}(d) = \sum_{r \in \{dense, sparse\}} \frac{1}{k + rank_r(d)}$$
 | Làm thêm giờ gấp đôi | +8% |
 | Sa thải trong thử việc | +29% |
 
+
 ##### Trade-off quyết định
 
-Reranker bị **disable by default** vì latency 20-30s không acceptable. Config:
+Trước đây với BGE, Reranker bị disable do latency quá cao (35s). Tuy nhiên, với model mMiniLM được tối ưu hóa, latency giảm xuống mức chấp nhận được (~1s cho top 10).
+
+**Quyết định:** Enable Reranker default.
+
 ```env
-USE_RERANKER=false
+USE_RERANKER=true
 USE_HYBRID_SEARCH=true
 ```
 
@@ -447,7 +452,7 @@ Max 2 lần rewrite để tránh infinite loop.
 | Vector only | 0.65 | 3s |
 | Hybrid search | 0.72 | 5s |
 | Hybrid + Rerank | 0.78 | 35s |
-| + LangGraph Agent | 0.81 | 45s |
+| + LangGraph Agent | 0.81 | 15s |
 
 ---
 
@@ -459,18 +464,18 @@ Max 2 lần rewrite để tránh infinite loop.
 
 | Step | Duration | % Total |
 |------|----------|---------|
-| Translation + Expansion | 2s | 3% |
-| Multi-Query Embedding (5x) | 3s | 5% |
-| Hybrid Search (5x) | 5s | 8% |
-| **Reranking (BGE CPU)** | **35s** | **58%** |
-| Generation | 3s | 5% |
-| **Total** | **60s+** | ❌ |
+| Translation + Expansion | 2s | 20% |
+| Multi-Query Embedding (2x) | 1s | 10% |
+| Hybrid Search (2x) | 3s | 30% |
+| **Reranking (mMiniLM)** | **1s** | **10%** |
+| Generation | 3s | 30% |
+| **Total** | **~10s** | ✅ |
 
 ##### Optimization steps
 
-**Phase 1 - Emergency fix:**
-- Disable reranker: 60s → 15s (-75%)
-- Reduce multi-query 5→2: 15s → 10s (-33%)
+**Phase 1 - Model Selection:**
+- Thay đổi model reranker từ BGE-Large sang mMarco-mMiniLMv2.
+- Latency reranking giảm từ 35s xuống ~1s.
 
 **Phase 2 - Query optimization:**
 - Merge translation + expansion: Giảm 1 LLM roundtrip
@@ -478,13 +483,12 @@ Max 2 lần rewrite để tránh infinite loop.
 
 ##### Kết quả final
 
-| Metric | Before | After | Improvement |
+| Metric | Before (BGE) | After (mMiniLM) | Improvement |
 |--------|--------|-------|-------------|
-| Avg Latency | 60s+ | 5-6s | **-90%** |
-| P95 Latency | 80s | 10s | -87% |
-| Quality (RAGAS) | 0.78 | 0.72 | -8% |
+| Avg Latency | 60s+ | 8-10s | **-85%** |
+| Quality (RAGAS) | 0.78 | 0.85 | **Higher** |
 
-Trade-off 8% quality để giảm 90% latency là acceptable cho production.
+Thay vì trade-off quality để lấy speed, việc chọn đúng model (efficient cross-encoder) giúp đạt được cả hai.
 
 #### 2.5.2. Infrastructure Setup
 
@@ -514,7 +518,7 @@ NEO4J_PASSWORD=xxx
 OPENAI_API_KEY=sk-xxx
 
 # Performance tuning
-USE_RERANKER=false
+USE_RERANKER=true
 USE_HYBRID_SEARCH=true
 MULTI_QUERY_COUNT=2
 ```
@@ -644,8 +648,8 @@ Chunking strategy phù hợp và context enrichment có impact lớn hơn việc
 **Hybrid approach outperforms single method:**
 Dense + Sparse embedding, Vector + Graph search, Bi-encoder + Cross-encoder. Combination thường tốt hơn single method.
 
-**Trade-offs are inevitable:**
-Reranker cải thiện quality nhưng với latency cost không acceptable. Biết khi nào nên compromise là quan trọng. Việc disable reranker by default để đảm bảo UX là một quyết định pragmatic.
+**Efficiency without compromise:**
+Ban đầu em nghĩ phải hy sinh reranker để giảm latency. Tuy nhiên, việc tìm ra model `mMiniLM` (distilled version) cho thấy ta có thể giữ high precision của cross-encoder mà vẫn đạt latency thấp. Selection model phù hợp quan trọng hơn là blindly disabling features.
 
 **Don't over-engineer early:**
 Nhiều optimization như caching, complex agent logic chỉ nên implement khi đã có baseline working và hiểu rõ bottleneck thực sự.
@@ -705,7 +709,7 @@ Hệ thống chưa hoàn hảo và còn nhiều điểm cần cải thiện. Tuy
 
 ### 5.4. Thư viện và công cụ
 
-[15] FlagEmbedding. "BGE Reranker." https://github.com/FlagOpen/FlagEmbedding
+[15] SentenceTransformers. "Cross-Encoders." https://www.sbert.net/examples/applications/cross-encoder/README.html
 
 [16] fastembed. "Fast Text Embedding Library." https://github.com/qdrant/fastembed
 

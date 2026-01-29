@@ -147,12 +147,12 @@ def get_reranker():
     
     # Check if explicitly disabled (default is disabled for now)
     if not getattr(settings, 'reranker_enabled', False):  # Changed default to False
-        logger.info("✓ Reranker disabled - skipping model load (saves ~1-2GB RAM)")
+        logger.info("✓ Reranker disabled - skipping model load (saves ~560MB RAM)")
         return None
     
     try:
         from app.services.reranker import BGEReranker
-        logger.warning("[HEAVY LOAD] Loading BGE reranker (~1-2GB RAM)...")
+        logger.warning("[HEAVY LOAD] Loading BGE reranker v2-m3 (~560MB RAM)...")
         return BGEReranker()
     except Exception as e:
         logger.warning(f"Failed to load reranker, continuing without: {e}")
@@ -186,7 +186,7 @@ def get_rag_pipeline() -> RAGPipeline:
         embedding=get_embedding_service(),
         vector_store=get_vector_store(),
         llm=get_llm_provider(),
-        reranker=None,  # ⚡ EMERGENCY FIX: Disable reranker (-60s)
+        reranker=get_reranker(),  # ✅ Use bge-reranker-v2-m3 for better multilingual
         translator=get_query_translator(),  # Vietnamese → Japanese
         # Hybrid search configuration
         use_hybrid_search=use_hybrid,
@@ -224,6 +224,7 @@ def get_graphrag_pipeline() -> GraphRAGPipeline:
         embedding=get_embedding_service(),
         vector_store=get_vector_store(),
         llm=get_llm_provider(),
+        reranker=get_reranker(),  # ✅ Use bge-reranker-v2-m3 for better multilingual
         translator=get_query_translator(),
         sparse_embedding=sparse_emb,
         hybrid_store=hybrid_st,

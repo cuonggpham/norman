@@ -65,9 +65,9 @@ class BasePipeline(ABC):
     hybrid_store: HybridVectorStore | None = None
     
     # Config
-    default_top_k: int = 10
-    retrieval_multiplier: int = 4
-    min_score_threshold: float = 0.25
+    default_top_k: int = 5
+    retrieval_multiplier: int = 2
+    min_score_threshold: float = 0.1  # Lower threshold for reranker sigmoid scores (0.15-0.35 range)
     use_hybrid_search: bool = False
     use_multi_query: bool = True
     

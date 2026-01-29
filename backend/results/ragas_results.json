@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "timestamp": "2026-01-28 23:16:52",
+    "num_samples": 5,
+    "evaluation_time_s": 104.9
+  },
+  "scores": {
+    "faithfulness": 0.7092,
+    "answer_relevancy": 0.5282,
+    "context_precision": 0.7511,
+    "context_recall": 0.4667,
+    "average": 0.6138
+  },
+  "sample_results": [
+    {
+      "question": "Thời gian làm việc tối đa mỗi tuần theo luật lao động Nhật Bản là bao nhiêu giờ?",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.6572,
+      "context_precision": 0.7556,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Quy định về nghỉ phép có lương trong luật lao động Nhật như thế nào?",
+      "faithfulness": 0.75,
+      "answer_relevancy": 0.5707,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Tiền lương tối thiểu ở Nhật Bản được quy định như thế nào?",
+      "faithfulness": 0.375,
+      "answer_relevancy": 0.4583,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Chế độ bảo hiểm thất nghiệp ở Nhật hoạt động như thế nào?",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.3351,
+      "context_precision": 1.0,
+      "context_recall": 0.3333
+    },
+    {
+      "question": "Làm thế nào để khai thuế cuối năm (確定申告) ở Nhật?",
+      "faithfulness": 0.4211,
+      "answer_relevancy": 0.6198,
+      "context_precision": 1.0,
+      "context_recall": 0.0
+    }
+  ]
+}

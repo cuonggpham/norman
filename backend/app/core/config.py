@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     
     # Memory Optimization Settings
     use_hybrid_search: bool = True  # Toggle hybrid search (saves ~500MB if False)
-    reranker_enabled: bool = False  # Toggle reranker (saves ~1-2GB if False)
+    reranker_enabled: bool = True  # Toggle reranker (saves ~560MB if False)
     
     class Config:
         env_file = ".env"
