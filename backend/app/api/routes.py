@@ -170,6 +170,13 @@ BẢN DỊCH TIẾNG VIỆT:"""
             }
         )
         
+        # Check if response.text is None (can happen if content is filtered)
+        if response.text is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Gemini API returned empty response. Content may have been filtered or request was invalid."
+            )
+        
         translated_text = response.text.strip()
         processing_time = (time.time() - start_time) * 1000
         
@@ -178,5 +185,7 @@ BẢN DỊCH TIẾNG VIỆT:"""
             translated=translated_text,
             processing_time_ms=processing_time
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

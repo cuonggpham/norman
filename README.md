@@ -65,3 +65,7 @@ python scripts/cli.py chat "Thuế thu nhập cá nhân ở Nhật tính như th
 - **Backend**: FastAPI, Qdrant Cloud, OpenAI
 - **Frontend**: React, Vite
 - **Data**: 15,629 Japanese legal document chunks
+
+thuế thu nhập cá nhân được tính như thế nào? 
+thu nhập từ tiền mã hóa có phải đóng thuế không?
+tôi đi xe vượt đèn đỏ thì bị phạt tiền bao nhiêu? 

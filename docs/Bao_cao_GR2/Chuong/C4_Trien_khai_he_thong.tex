@@ -1,0 +1,677 @@
+Chương 3 đã trình bày thiết kế chi tiết của hệ thống. Chương này sẽ mô tả quá trình triển khai từng thành phần:
+
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Phần} & \textbf{Nội dung} \\ \hline
+    4.1 & Thu thập và xử lý dữ liệu \\ \hline
+    4.2 & Triển khai hệ thống Embedding \\ \hline
+    4.3 & Triển khai hệ thống truy vấn \\ \hline
+    4.4 & Triển khai LangGraph Agent \\ \hline
+    4.5 & Thư viện và công cụ sử dụng \\ \hline
+    4.6 & Kết quả đạt được \\ \hline
+    \end{tabular}
+    \caption{Nội dung triển khai}
+    \label{tab:implementation_content}
+\end{table}
+
+\section{Thu thập và xử lý dữ liệu}
+
+\subsection{Thu thập dữ liệu từ e-Gov API}
+
+\subsubsection{Phân tích API}
+
+Hệ thống e-Gov Laws API của Nhật Bản cung cấp 3 endpoint chính:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|p{8cm}|}
+    \hline
+    \textbf{Endpoint} & \textbf{Phương thức} & \textbf{Chức năng} \\ \hline
+    /laws & GET & Lấy danh sách văn bản luật theo danh mục (category) \\ \hline
+    /keyword & GET & Tìm kiếm văn bản luật theo từ khóa \\ \hline
+    /law\_data/\{law\_id\} & GET & Tải nội dung XML đầy đủ của văn bản luật \\ \hline
+    \end{tabular}
+    \caption{Các endpoint của e-Gov API}
+    \label{tab:egov_endpoints}
+\end{table}
+
+\textbf{Giới hạn}: ~50 requests/phút
+
+\subsubsection{Chiến lược thu thập}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_chien_luoc_thu_thap}
+    \caption{Chiến lược thu thập dữ liệu}
+    \label{fig:collection_strategy}
+\end{figure}
+
+\textbf{1. Category-based Search (Tìm kiếm theo danh mục)}:
+\begin{itemize}
+    \item Thuế quốc gia
+    \item Tài chính địa phương
+    \item Bảo hiểm xã hội
+    \item Lao động
+\end{itemize}
+
+\textbf{2. Keyword-based Search (Tìm kiếm theo từ khóa)}:
+\begin{itemize}
+    \item Người nước ngoài
+    \item Cư trú
+    \item Thuế thu nhập
+    \item Lương hưu
+    \item Bảo hiểm y tế
+\end{itemize}
+
+\subsubsection{Bộ lọc chất lượng}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Loại bộ lọc} & \textbf{Điều kiện} & \textbf{Mục đích} \\ \hline
+    Era filter & Ban hành từ thời Showa (1926) trở về sau & Loại bỏ văn bản quá cũ \\ \hline
+    Law type filter & Act hoặc Cabinet Order & Tập trung văn bản quan trọng \\ \hline
+    Status filter & CurrentEnforced & Chỉ lấy văn bản đang có hiệu lực \\ \hline
+    \end{tabular}
+    \caption{Các bộ lọc dữ liệu}
+    \label{tab:data_filters}
+\end{table}
+
+\subsubsection{Xử lý giới hạn tần suất (Rate Limiting)}
+
+\begin{itemize}
+    \item \textbf{Độ trễ giữa các request}: 1.2 giây
+    \item \textbf{Chiến lược retry khi gặp lỗi}:
+    \begin{itemize}
+        \item Lần 1: Chờ 5 giây
+        \item Lần 2: Chờ 10 giây
+        \item Lần 3: Chờ 20 giây
+    \end{itemize}
+    \item \textbf{Nếu vẫn thất bại}: Ghi log lỗi $\rightarrow$ Tiếp tục với văn bản tiếp theo
+\end{itemize}
+
+\subsubsection{Kết quả thu thập}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Metric} & \textbf{Giá trị} \\ \hline
+    Số file XML & 431 \\ \hline
+    Tổng dung lượng & ~80MB \\ \hline
+    \end{tabular}
+    \caption{Kết quả thu thập dữ liệu}
+    \label{tab:collection_results}
+\end{table}
+
+\subsection{Phân tích cấu trúc XML}
+
+\subsubsection{Cấu trúc văn bản luật e-Gov}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_cau_truc_xml}
+    \caption{Cấu trúc file XML luật}
+    \label{fig:xml_structure}
+\end{figure}
+
+\subsubsection{Triển khai bộ phân tích XML}
+
+\textbf{Thư viện sử dụng}: \texttt{lxml} (Python)
+
+\textbf{Quy trình parse}:
+\begin{enumerate}
+    \item Trích xuất metadata từ \texttt{law\_info} và \texttt{revision\_info}
+    \item Duyệt tất cả phần tử \texttt{Article} trong \texttt{MainProvision}
+    \item Với mỗi Article $\rightarrow$ Trích xuất các \texttt{Paragraph} kèm nội dung
+\end{enumerate}
+
+\textbf{Output}: Dictionary lồng nhau (nested dict)
+
+\subsection{Triển khai Chunking}
+
+\subsubsection{Chiến lược Paragraph-level Chunking}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_paragraph_chunking}
+    \caption{Chiến lược Chunking theo Paragraph}
+    \label{fig:chunking_strategy}
+\end{figure}
+
+\textbf{Lý do chọn paragraph-level}:
+\begin{itemize}
+    \item Đảm bảo tính nguyên vẹn ngữ nghĩa (mỗi khoản = 1 ý hoàn chỉnh)
+    \item Phù hợp với context window của mô hình embedding
+    \item Thuận tiện cho việc trích dẫn nguồn chính xác
+\end{itemize}
+
+\subsubsection{Context Enrichment}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Trường} & \textbf{Nội dung} & \textbf{Mục đích} \\ \hline
+    \texttt{text} & Nội dung gốc của khoản & Hiển thị cho người dùng \\ \hline
+    \texttt{text\_with\_context} & Tên luật + Số điều + Tiêu đề điều + Nội dung & Dùng cho embedding \\ \hline
+    \end{tabular}
+    \caption{Cấu trúc Context Enrichment}
+    \label{tab:context_enrichment}
+\end{table}
+
+\textbf{Metadata của mỗi chunk}:
+\begin{itemize}
+    \item \texttt{chunk\_id}: Mã định danh duy nhất
+    \item \texttt{law\_id}: Mã văn bản luật gốc
+    \item \texttt{law\_title}: Tên văn bản luật
+    \item \texttt{article\_num}, \texttt{article\_title}: Số điều và tiêu đề
+    \item \texttt{paragraph\_num}: Số khoản
+    \item \texttt{text}, \texttt{text\_with\_context}: Nội dung
+\end{itemize}
+
+\subsubsection{Thống kê kết quả Chunking}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Metric} & \textbf{Giá trị} \\ \hline
+    Tổng số chunks & 206,014 \\ \hline
+    Kích thước trung bình & ~171 ký tự (~85 tokens) \\ \hline
+    Chunk ngắn nhất & 10 ký tự \\ \hline
+    Chunk dài nhất & 2,500 ký tự \\ \hline
+    \end{tabular}
+    \caption{Thống kê kết quả Chunking}
+    \label{tab:chunking_stats}
+\end{table}
+
+\section{Triển khai hệ thống Embedding}
+
+\subsection{Dense Embedding với OpenAI}
+
+\subsubsection{Lựa chọn mô hình}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|p{6cm}|}
+    \hline
+    \textbf{Mô hình} & \textbf{Kích thước vector} & \textbf{Ưu điểm} \\ \hline
+    \texttt{text-embedding-3-large} & 3,072 chiều & Hỗ trợ đa ngôn ngữ (Nhật, Việt) tốt \\ \hline
+    \end{tabular}
+    \caption{Mô hình Dense Embedding}
+    \label{tab:dense_model}
+\end{table}
+
+\subsubsection{Xử lý theo Batch}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_batch_processing}
+    \caption{Quy trình xử lý theo Batch}
+    \label{fig:batch_process}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Batch size}: 100 chunks/request
+    \item \textbf{Mục đích}: Giảm thời gian và chi phí API
+\end{itemize}
+
+\subsubsection{Cơ chế Checkpoint}
+
+\begin{itemize}
+    \item \textbf{Lưu checkpoint}: Sau mỗi văn bản luật xử lý xong
+    \item \textbf{Khôi phục}: Tiếp tục từ checkpoint nếu bị gián đoạn
+    \item \textbf{Dữ liệu checkpoint}: Chỉ số văn bản + Tất cả embedding đã có
+\end{itemize}
+
+\subsection{Sparse Embedding với fastembed}
+
+\subsubsection{So sánh Dense vs Sparse Embedding}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Đặc điểm} & \textbf{Dense Embedding} & \textbf{Sparse Embedding} \\ \hline
+    Biểu diễn & Vector dày (dense) & Vector thưa (sparse) \\ \hline
+    Tìm kiếm & Ngữ nghĩa (semantic) & Từ khóa (keyword) \\ \hline
+    Thuật toán & Neural network & BM25 \\ \hline
+    Ưu điểm & Hiểu nghĩa tương đồng & Khớp từ chính xác \\ \hline
+    \end{tabular}
+    \caption{So sánh Dense và Sparse Embedding}
+    \label{tab:dense_vs_sparse}
+\end{table}
+
+\subsubsection{Triển khai}
+
+\begin{itemize}
+    \item \textbf{Thư viện}: \texttt{fastembed}
+    \item \textbf{Mô hình}: \texttt{Qdrant/bm25}
+    \item \textbf{Đặc điểm}: Chạy offline, không cần API
+\end{itemize}
+
+\textbf{Cấu trúc output}:
+\begin{itemize}
+    \item \texttt{indices}: Vị trí các từ trong vocabulary
+    \item \texttt{values}: Trọng số BM25 tương ứng
+\end{itemize}
+
+\subsection{Indexing vào Qdrant}
+
+\subsubsection{Thiết lập Collection}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Cấu hình} & \textbf{Dense Vector} & \textbf{Sparse Vector} \\ \hline
+    Kích thước & 3,072 chiều & Động (vocabulary size) \\ \hline
+    Metric & Cosine Similarity & IDF modifier \\ \hline
+    Collection name & \texttt{japanese\_laws\_hybrid} & \\ \hline
+    \end{tabular}
+    \caption{Cấu hình Collection trong Qdrant}
+    \label{tab:collection_config}
+\end{table}
+
+\subsubsection{Quy trình Upsert}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_qdrant_upsert}
+    \caption{Quy trình Upsert vào Qdrant}
+    \label{fig:qdrant_upsert}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Batch size}: 100 points
+    \item \textbf{Tổng thời gian indexing}: ~2 giờ
+\end{itemize}
+
+\section{Triển khai hệ thống truy vấn}
+
+\subsection{Hybrid Search với RRF}
+
+\subsubsection{Nguyên lý hoạt động}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_nguyen_ly_hybrid_search}
+    \caption{Nguyên lý Hybrid Search}
+    \label{fig:hybrid_search}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|p{5cm}|}
+    \hline
+    \textbf{Loại Search} & \textbf{Ưu điểm} & \textbf{Nhược điểm} \\ \hline
+    Dense Search & Tìm nghĩa tương đồng & Có thể bỏ sót từ khóa quan trọng \\ \hline
+    Sparse Search & Khớp từ chính xác & Không hiểu ngữ nghĩa \\ \hline
+    \textbf{Hybrid} & \textbf{Kết hợp cả hai ưu điểm} & \\ \hline
+    \end{tabular}
+    \caption{Ưu nhược điểm các phương pháp tìm kiếm}
+    \label{tab:search_methods_compare}
+\end{table}
+
+\subsubsection{Triển khai với Qdrant Prefetch}
+
+\textbf{Giai đoạn 1 - Prefetch}:
+\begin{itemize}
+    \item Dense search: Lấy \texttt{top\_k} $\times$ 2 kết quả
+    \item Sparse search: Lấy \texttt{top\_k} $\times$ 2 kết quả
+\end{itemize}
+
+\textbf{Giai đoạn 2 - Fusion (RRF)}:
+\begin{verbatim}
+score = 1/(k + rank_dense) + 1/(k + rank_sparse)
+\end{verbatim}
+\begin{itemize}
+    \item \texttt{k = 60} (tham số điều chỉnh)
+    \item Sắp xếp theo score $\rightarrow$ Lấy \texttt{top\_k}
+\end{itemize}
+
+\subsection{Cross-Encoder Reranking}
+
+\subsubsection{So sánh Bi-Encoder vs Cross-Encoder}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Đặc điểm} & \textbf{Bi-Encoder} & \textbf{Cross-Encoder} \\ \hline
+    Input & Query và Document riêng biệt & (Query, Document) cùng nhau \\ \hline
+    Tốc độ & Nhanh & Chậm hơn \\ \hline
+    Độ chính xác & Tốt & \textbf{Tốt hơn} \\ \hline
+    Sử dụng & Retrieval (giai đoạn 1) & Reranking (giai đoạn 2) \\ \hline
+    \end{tabular}
+    \caption{Bi-Encoder và Cross-Encoder}
+    \label{tab:bi_vs_cross}
+\end{table}
+
+\subsubsection{Triển khai}
+
+\begin{itemize}
+    \item \textbf{Mô hình}: \texttt{cross-encoder/mmarco-mMiniLMv2-L12-H384-v1}
+    \item \textbf{Thư viện}: \texttt{sentence-transformers}
+    \item \textbf{Đặc điểm}: Đa ngôn ngữ, hỗ trợ tiếng Nhật
+\end{itemize}
+
+\textbf{Quy trình Reranking}:
+\begin{enumerate}
+    \item Nhận danh sách documents từ Hybrid Search
+    \item Tạo các cặp \texttt{(query, document.text\_with\_context)}
+    \item Đưa qua Cross-Encoder $\rightarrow$ Điểm relevance
+    \item Sắp xếp theo điểm (cao $\rightarrow$ thấp)
+    \item Lấy top-n documents (thường là 5)
+\end{enumerate}
+
+\subsection{Query Translation và Expansion}
+
+\subsubsection{Vấn đề Cross-lingual Retrieval}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_cross_lingual}
+    \caption{Vấn đề Cross-lingual Retrieval}
+    \label{fig:cross_lingual}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Vấn đề}: Người dùng hỏi tiếng Việt, corpus là tiếng Nhật
+    \item \textbf{Giải pháp}: Dịch query sang tiếng Nhật trước khi search
+\end{itemize}
+
+\subsubsection{Triển khai với GPT-4o-mini}
+
+\textbf{3 nhiệm vụ thực hiện đồng thời}:
+\begin{enumerate}
+    \item \textbf{Dịch query}: Tiếng Việt $\rightarrow$ Tiếng Nhật
+    \item \textbf{Trích xuất keywords}: Các từ khóa pháp lý quan trọng
+    \item \textbf{Mở rộng query}: Tạo biến thể search query
+\end{enumerate}
+
+\textbf{Ví dụ}:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|p{8cm}|}
+    \hline
+    \textbf{Đầu vào} & \textbf{Đầu ra} \\ \hline
+    "Thời gian làm việc tối đa mỗi tuần là bao nhiêu?" & \\ \hline
+    \texttt{translated} & "\japan{一週間の最大労働時間は何時間ですか}?" \\ \hline
+    \texttt{keywords} & ["\japan{労働時間}", "\japan{労働基準法}"] \\ \hline
+    \texttt{search\_queries} & ["\japan{週労働時間上限}", "\japan{一週間労働時間制限}"] \\ \hline
+    \end{tabular}
+    \caption{Ví dụ dịch và mở rộng truy vấn}
+    \label{tab:translation_example}
+\end{table}
+
+\section{Triển khai LangGraph Agent}
+
+\subsection{Thiết kế State}
+
+\subsubsection{Cấu trúc LegalRAGState}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_legal_rag_state}
+    \caption{Cấu trúc LegalRAGState}
+    \label{fig:rag_state}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Trường} & \textbf{Kiểu dữ liệu} & \textbf{Mô tả} \\ \hline
+    \texttt{query} & str & Câu hỏi gốc (tiếng Việt) \\ \hline
+    \texttt{translated\_query} & str & Câu hỏi đã dịch (tiếng Nhật) \\ \hline
+    \texttt{search\_queries} & List[str] & Các query mở rộng \\ \hline
+    \texttt{documents} & List[Document] & Documents từ retrieval \\ \hline
+    \texttt{document\_grades} & List[str] & Đánh giá relevance \\ \hline
+    \texttt{reranked\_documents} & List[Document] & Documents sau rerank \\ \hline
+    \texttt{answer} & str & Câu trả lời \\ \hline
+    \texttt{sources} & List[Source] & Nguồn tham khảo \\ \hline
+    \texttt{rewrite\_count} & int & Số lần rewrite query \\ \hline
+    \end{tabular}
+    \caption{Định nghĩa State}
+    \label{tab:state_definition}
+\end{table}
+
+\subsection{Triển khai các Node}
+
+\subsubsection{Danh sách các Node}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|p{5cm}|}
+    \hline
+    \textbf{Node} & \textbf{Input} & \textbf{Output} & \textbf{Chức năng} \\ \hline
+    \textbf{Translate} & query & translated\_query, search\_queries & Dịch và mở rộng query \\ \hline
+    \textbf{Retrieve} & search\_queries & documents & Hybrid search trên Qdrant \\ \hline
+    \textbf{Grade Documents} & documents, query & document\_grades & Đánh giá relevance từng document \\ \hline
+    \textbf{Rerank} & documents (relevant) & reranked\_documents & Cross-encoder reranking \\ \hline
+    \textbf{Generate} & reranked\_documents, query & answer, sources & Tạo câu trả lời với LLM \\ \hline
+    \textbf{Rewrite Query} & query, documents & search\_queries mới & Điều chỉnh query khi retrieval kém \\ \hline
+    \end{tabular}
+    \caption{Danh sách các Node trong Agent}
+    \label{tab:agent_nodes}
+\end{table}
+
+\subsubsection{Chi tiết các Node}
+
+\textbf{Translate Node}:
+\begin{itemize}
+    \item Sử dụng GPT-4o-mini
+    \item Output: \texttt{translated\_query} + \texttt{search\_queries}
+\end{itemize}
+
+\textbf{Retrieve Node}:
+\begin{itemize}
+    \item Thực hiện hybrid search với mỗi query
+    \item Gộp kết quả + Loại bỏ trùng lặp
+    \item Giới hạn: 20 documents unique
+\end{itemize}
+
+\textbf{Grade Documents Node}:
+\begin{itemize}
+    \item LLM đánh giá từng document
+    \item Kết quả: "relevant" hoặc "not\_relevant"
+\end{itemize}
+
+\textbf{Rerank Node}:
+\begin{itemize}
+    \item Lọc documents "relevant"
+    \item Cross-encoder reranking
+    \item Sắp xếp theo relevance score
+\end{itemize}
+
+\textbf{Generate Node}:
+\begin{itemize}
+    \item Sử dụng GPT-4o-mini
+    \item Trả lời bằng tiếng Việt
+    \item Kèm trích dẫn nguồn
+\end{itemize}
+
+\textbf{Rewrite Query Node}:
+\begin{itemize}
+    \item Phân tích nguyên nhân retrieval kém
+    \item Đề xuất query mới
+    \item Tăng \texttt{rewrite\_count}
+\end{itemize}
+
+\subsection{Xây dựng Graph}
+
+\subsubsection{Luồng xử lý (Workflow)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_workflow}
+    \caption{Luồng xử lý Agent}
+    \label{fig:agent_workflow}
+\end{figure}
+
+\subsubsection{Conditional Edge Logic}
+
+\begin{verbatim}
+if (relevant_docs >= 2) OR (rewrite_count >= 2):
+    -> Chuyển đến "Rerank"
+else:
+    -> Chuyển đến "Rewrite Query"
+\end{verbatim}
+
+\begin{itemize}
+    \item \textbf{Giới hạn rewrite}: Tối đa 2 lần
+    \item \textbf{Mục đích}: Tránh vòng lặp vô tận
+\end{itemize}
+
+\section{Thư viện và công cụ sử dụng}
+
+\subsection{Backend}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Thư viện} & \textbf{Phiên bản} & \textbf{Chức năng} \\ \hline
+    FastAPI & 0.109.0 & Web framework, API endpoints \\ \hline
+    httpx & 0.26.0 & HTTP client bất đồng bộ \\ \hline
+    lxml & 5.1.0 & Parse và xử lý XML \\ \hline
+    openai & 1.10.0 & OpenAI API (embedding + LLM) \\ \hline
+    qdrant-client & 1.7.0 & Vector database client \\ \hline
+    fastembed & 0.2.0 & Sparse embedding (BM25) \\ \hline
+    neo4j & 5.16.0 & Knowledge Graph database \\ \hline
+    sentence-transformers & 2.3.0 & Cross-encoder reranking \\ \hline
+    langgraph & 0.0.26 & Agent workflow orchestration \\ \hline
+    \end{tabular}
+    \caption{Thư viện Backend}
+    \label{tab:backend_libs}
+\end{table}
+
+\subsection{Frontend}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Thư viện} & \textbf{Phiên bản} & \textbf{Chức năng} \\ \hline
+    Next.js & 14.0.0 & React framework, SSR \\ \hline
+    \end{tabular}
+    \caption{Thư viện Frontend}
+    \label{tab:frontend_libs}
+\end{table}
+
+\section{Kết quả đạt được}
+
+\subsection{Thống kê hệ thống}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Thành phần} & \textbf{Metric} & \textbf{Giá trị} \\ \hline
+    \textbf{Vector Database} & Số văn bản luật & 431 \\ \hline
+    & Số chunks & 206,014 \\ \hline
+    & Dung lượng & ~2.5GB \\ \hline
+    \textbf{Knowledge Graph} & Số nodes & ~50,000 \\ \hline
+    & Số relationships & ~100,000 \\ \hline
+    \end{tabular}
+    \caption{Thống kê hệ thống}
+    \label{tab:system_stats}
+\end{table}
+
+\subsection{Phân tích độ trễ}
+
+\subsubsection{Breakdown thời gian xử lý (Query điển hình: ~10 giây)}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Bước} & \textbf{Thời gian} & \textbf{Tỷ lệ} & \textbf{Chi tiết} \\ \hline
+    Translation \& Expansion & 2s & 20\% & API call đến OpenAI \\ \hline
+    Query Embedding & 1s & 10\% & Embedding các query mở rộng \\ \hline
+    Hybrid Search & 3s & 30\% & Search trên Qdrant Cloud \\ \hline
+    Reranking & 1s & 10\% & Cross-encoder (CPU local) \\ \hline
+    Generate Answer & 3s & 30\% & LLM generate response \\ \hline
+    \textbf{Tổng} & \textbf{10s} & \textbf{100\%} & \\ \hline
+    \end{tabular}
+    \caption{Phân tích thời gian xử lý}
+    \label{tab:latency_breakdown}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_thoi_gian_xu_ly}
+    \caption{Biểu đồ thời gian xử lý}
+    \label{fig:latency_chart}
+\end{figure}
+
+\subsection{Minh họa chức năng}
+
+\subsubsection{Ví dụ: Query về thời gian làm việc}
+
+\textbf{Input}: "Thời gian làm việc tối đa mỗi tuần là bao nhiêu?"
+
+\textbf{Pipeline xử lý}:
+\begin{enumerate}
+    \item \textbf{Translate}: $\rightarrow$ "\japan{一週間の最大労働時間は何時間ですか}?"
+    \item \textbf{Retrieve}: $\rightarrow$ Tìm các điều khoản trong \japan{労働基準法}
+    \item \textbf{Rerank}: $\rightarrow$ Chọn Điều 32 là relevant nhất
+    \item \textbf{Generate}: $\rightarrow$ Tạo câu trả lời tiếng Việt
+\end{enumerate}
+
+\textbf{Output}:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|p{10cm}|}
+    \hline
+    \textbf{Phần} & \textbf{Nội dung} \\ \hline
+    \textbf{Câu trả lời} & "Theo Luật Tiêu chuẩn Lao động (\japan{労働基準法}), thời gian làm việc tối đa là **40 giờ/tuần** và **8 giờ/ngày**." \\ \hline
+    \textbf{Nguồn} & Điều 32, Luật Tiêu chuẩn Lao động \\ \hline
+    \textbf{Trích dẫn} & \japan{「使用者は、労働者に、休憩時間を除き一週間について四十時間を超えて、労働させてはならない。」} \\ \hline
+    \textbf{Dịch nghĩa} & "Người sử dụng lao động không được bắt người lao động làm việc quá 40 giờ một tuần, không tính thời gian nghỉ." \\ \hline
+    \end{tabular}
+    \caption{Ví dụ output hệ thống}
+    \label{tab:system_output}
+\end{table}
+
+\chapter*{Kết chương}
+\addcontentsline{toc}{chapter}{Kết chương}
+
+\subsection*{Tổng kết các thành phần đã triển khai}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|p{10cm}|}
+    \hline
+    \textbf{Thành phần} & \textbf{Kết quả} \\ \hline
+    \textbf{Thu thập dữ liệu} & 431 văn bản luật từ e-Gov API \\ \hline
+    \textbf{Chunking} & 206,014 chunks với context enrichment \\ \hline
+    \textbf{Embedding} & Dense (OpenAI) + Sparse (BM25) \\ \hline
+    \textbf{Vector DB} & Qdrant Cloud với hybrid search \\ \hline
+    \textbf{Retrieval} & Hybrid Search + RRF + Cross-encoder Reranking \\ \hline
+    \textbf{Agent} & LangGraph với self-correction loop \\ \hline
+    \textbf{Latency} & ~10 giây/query \\ \hline
+    \end{tabular}
+    \caption{Tổng kết và đánh giá}
+    \label{tab:summary}
+\end{table}
+
+\subsection*{Điểm nổi bật}
+
+\begin{itemize}
+    \item Pipeline xử lý dữ liệu hoàn chỉnh (thu thập $\rightarrow$ chunking $\rightarrow$ embedding $\rightarrow$ indexing)
+    \item Hybrid search kết hợp dense + sparse cho độ chính xác cao
+    \item Cross-encoder reranking cải thiện kết quả retrieval
+    \item Self-correction loop xử lý query phức tạp
+    \item Hệ thống sẵn sàng cho sử dụng thực tế
+\end{itemize}
+
+\textbf{Chương tiếp theo} sẽ đánh giá chi tiết hiệu quả của hệ thống với framework RAGAS.

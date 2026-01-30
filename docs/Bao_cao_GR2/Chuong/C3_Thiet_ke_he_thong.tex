@@ -1,0 +1,759 @@
+Chương 2 đã trình bày các cơ sở lý thuyết về RAG, text embedding, hybrid search, và knowledge graph. Chương này sẽ phân tích yêu cầu bài toán và mô tả thiết kế chi tiết của hệ thống, bao gồm: (i) phân tích yêu cầu trong phần \ref{sec:requirements}, (ii) kiến trúc tổng quan trong phần \ref{sec:architecture}, (iii) thiết kế Data Pipeline trong phần \ref{sec:data_pipeline}, (iv) thiết kế Knowledge Graph trong phần \ref{sec:kg_design}, (v) thiết kế RAG Pipeline trong phần \ref{sec:rag_pipeline}, (vi) thiết kế GraphRAG Pipeline trong phần \ref{sec:graphrag_pipeline}, (vii) thiết kế LangGraph Agent trong phần \ref{sec:agent_design}, và (viii) thiết kế API trong phần \ref{sec:api_design}.
+
+
+\section{Phân tích yêu cầu}
+\label{sec:requirements}
+
+\subsection{Yêu cầu chức năng}
+
+Hệ thống Norman - Chatbot tư vấn pháp luật Nhật Bản cho người dùng Việt Nam cần đáp ứng các yêu cầu chức năng sau:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|p{8cm}|}
+    \hline
+    \textbf{STT} & \textbf{Yêu cầu} & \textbf{Mô tả} \\ \hline
+    F1 & Truy vấn pháp luật bằng tiếng Việt & Người dùng đặt câu hỏi bằng tiếng Việt, hệ thống tự động dịch sang tiếng Nhật để tìm kiếm \\ \hline
+    F2 & Tìm kiếm văn bản pháp luật & Tìm kiếm trong cơ sở dữ liệu luật Nhật Bản theo nội dung semantic \\ \hline
+    F3 & Trả lời câu hỏi với trích dẫn & Sinh câu trả lời bằng tiếng Việt kèm trích dẫn nguồn (điều, khoản cụ thể) \\ \hline
+    F4 & Tra cứu điều luật cụ thể & Tra cứu trực tiếp điều luật theo số (ví dụ: "Điều 32 Luật Tiêu chuẩn Lao động") \\ \hline
+    F5 & Tìm điều luật liên quan & Tìm các điều luật có quan hệ tham chiếu với điều luật đang xem \\ \hline
+    F6 & Dịch văn bản pháp luật & Dịch đoạn văn bản luật tiếng Nhật sang tiếng Việt với thuật ngữ chính xác \\ \hline
+    \end{tabular}
+    \caption{Danh sách yêu cầu chức năng}
+    \label{tab:functional_reqs}
+\end{table}
+
+\subsection{Yêu cầu phi chức năng}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|p{6cm}|l|}
+    \hline
+    \textbf{STT} & \textbf{Yêu cầu} & \textbf{Mô tả} & \textbf{Mức độ ưu tiên} \\ \hline
+    NF1 & Thời gian phản hồi & Trả lời trong vòng 3-5 giây & Cao \\ \hline
+    NF2 & Độ chính xác & Trích dẫn đúng nguồn, không "hallucination" & Cao \\ \hline
+    NF3 & Khả năng mở rộng & Dễ dàng thêm luật mới từ e-Gov API & Trung bình \\ \hline
+    NF4 & Tính sẵn sàng & Hệ thống hoạt động 24/7 trên cloud & Trung bình \\ \hline
+    NF5 & Giao diện thân thiện & UI đơn giản, dễ sử dụng cho người không chuyên & Trung bình \\ \hline
+    NF6 & Bảo mật & Không lưu trữ thông tin cá nhân người dùng & Thấp \\ \hline
+    \end{tabular}
+    \caption{Danh sách yêu cầu phi chức năng}
+    \label{tab:non_functional_reqs}
+\end{table}
+
+\subsection{Đặc thù bài toán xuyên ngôn ngữ (Việt-Nhật)}
+
+Bài toán tư vấn pháp luật Nhật Bản cho người Việt có các đặc thù sau:
+
+\textbf{Thách thức ngôn ngữ:}
+\begin{itemize}
+    \item \textbf{Khoảng cách ngữ nghĩa}: Tiếng Việt và tiếng Nhật thuộc hai ngữ hệ khác nhau, embedding model cần hỗ trợ multilingual.
+    \item \textbf{Thuật ngữ pháp lý}: Cần bảo toàn thuật ngữ gốc tiếng Nhật (ví dụ: \japan{労働基準法} - Luật Tiêu chuẩn Lao động).
+    \item \textbf{Cấu trúc văn bản}: Văn bản luật Nhật có cấu trúc riêng (\japan{編}/\japan{章}/\japan{節}/\japan{条}/\japan{項}/\japan{号}).
+\end{itemize}
+
+\textbf{Giải pháp thiết kế:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|p{10cm}|}
+    \hline
+    \textbf{Thách thức} & \textbf{Giải pháp} \\ \hline
+    Query tiếng Việt & Query Translation: GPT-4o-mini dịch query $\rightarrow$ tiếng Nhật trước khi tìm kiếm \\ \hline
+    Embedding xuyên ngữ & OpenAI text-embedding-3-large hỗ trợ multilingual \\ \hline
+    Thuật ngữ pháp lý & Prompt engineering: giữ nguyên thuật ngữ Nhật trong ngoặc [] \\ \hline
+    Citation format & Mapping paragraph-level chunking với cấu trúc pháp lý \\ \hline
+    \end{tabular}
+    \caption{Thách thức và giải pháp thiết kế}
+    \label{tab:challenges_solutions}
+\end{table}
+
+\section{Kiến trúc tổng quan hệ thống}
+\label{sec:architecture}
+
+\subsection{Sơ đồ kiến trúc multi-layer}
+
+Hệ thống được thiết kế theo kiến trúc \textbf{RAG Pipeline} với nhiều layer:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{hinh_kien_truc_tong_quan}
+    \caption{Kiến trúc tổng quan hệ thống}
+    \label{fig:system_architecture}
+\end{figure}
+
+\subsection{Luồng xử lý dữ liệu (Data Flow)}
+
+Hệ thống có hai luồng xử lý chính:
+
+\textbf{Offline Pipeline (Data Ingestion)}:
+\begin{verbatim}
+e-Gov API -> XML Parser -> Chunking -> Embedding -> Qdrant + Neo4j
+\end{verbatim}
+
+\textbf{Online Pipeline (Query Processing)}:
+\begin{verbatim}
+User Query -> Translation -> Hybrid Search -> Reranking -> LLM Generation -> Response
+\end{verbatim}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|p{4cm}|}
+    \hline
+    \textbf{Pipeline} & \textbf{Tính chất} & \textbf{Thời gian} & \textbf{Mục đích} \\ \hline
+    Offline & Batch processing & Phút đến giờ & Chuẩn bị dữ liệu, chạy định kỳ \\ \hline
+    Online & Real-time & < 5 giây & Phục vụ query người dùng \\ \hline
+    \end{tabular}
+    \caption{So sánh Offline và Online Pipeline}
+    \label{tab:pipeline_comparison}
+\end{table}
+
+\section{Thiết kế Data Pipeline}
+\label{sec:data_pipeline}
+
+\subsection{Thu thập dữ liệu từ e-Gov API}
+
+Dữ liệu văn bản pháp luật được thu thập từ \textbf{e-Gov API} của Chính phủ Nhật Bản:
+
+\textbf{Thông số API:}
+\begin{itemize}
+    \item Endpoint: \texttt{https://elaws.e-gov.go.jp/api/1/lawdata/\{law\_id\}}
+    \item Format: XML
+    \item Rate limit: ~1.2 giây/request (để tránh bị block)
+\end{itemize}
+
+\textbf{Quy trình thu thập:}
+\begin{verbatim}
+1. Category Search -> Lấy danh sách law_id theo category
+2. Keyword Search  -> Bổ sung thêm luật theo keyword
+3. Download XML    -> Tải về từng file XML
+4. Lưu trữ local   -> Lưu vào thư mục data/laws/
+\end{verbatim}
+
+\textbf{Danh mục luật được thu thập:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Category} & \textbf{Số luật} & \textbf{Ví dụ} \\ \hline
+    Lao động (\japan{労働}) & ~50 & \japan{労働基準法}, \japan{労働契約法} \\ \hline
+    Thuế (\japan{税金}) & ~30 & \japan{所得税法}, \japan{消費税法} \\ \hline
+    An sinh xã hội & ~40 & \japan{国民健康保険法}, \japan{年金法} \\ \hline
+    Nhập cư & ~20 & \japan{出入国管理法}, \japan{入管特例法} \\ \hline
+    \end{tabular}
+    \caption{Danh mục luật thu thập}
+    \label{tab:collected_laws}
+\end{table}
+
+\subsection{XML Parser cho văn bản pháp luật}
+
+Cấu trúc văn bản pháp luật Nhật Bản theo XML:
+
+\begin{verbatim}
+<LawBody>
+  <LawTitle>\japan{労働基準法}</LawTitle>
+  <MainProvision>
+    <Part Num="1">           <!-- Phần -->
+      <Chapter Num="4">      <!-- Chương -->
+        <Section Num="1">    <!-- Mục -->
+          <Article Num="32"> <!-- Điều -->
+            <ArticleTitle>\japan{労働時間}</ArticleTitle>
+            <Paragraph Num="1">  <!-- Khoản -->
+              <ParagraphSentence>
+                \japan{使用者は、労働者に}...
+              </ParagraphSentence>
+            </Paragraph>
+          </Article>
+        </Section>
+      </Chapter>
+    </Part>
+  </MainProvision>
+</LawBody>
+\end{verbatim}
+
+\textbf{Mapping cấu trúc:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Thẻ XML} & \textbf{Tiếng Nhật} & \textbf{Tiếng Việt} & \textbf{Cấp độ} \\ \hline
+    Part & \japan{編} & Phần & 1 \\ \hline
+    Chapter & \japan{章} & Chương & 2 \\ \hline
+    Section & \japan{節} & Mục & 3 \\ \hline
+    Article & \japan{条} & Điều & 4 \\ \hline
+    Paragraph & \japan{項} & Khoản & 5 \\ \hline
+    Item & \japan{号} & Điểm & 6 \\ \hline
+    \end{tabular}
+    \caption{Mapping cấu trúc XML}
+    \label{tab:xml_mapping}
+\end{table}
+
+\subsection{Chiến lược Chunking}
+
+\textbf{Quyết định thiết kế}: Paragraph-level chunking với context enrichment
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Phương án} & \textbf{Ưu điểm} & \textbf{Nhược điểm} & \textbf{Quyết định} \\ \hline
+    Fixed-size (512 tokens) & Đồng đều & Phá vỡ semantic coherence & Không \\ \hline
+    Sentence-level & Granular & Quá nhỏ, mất context & Không \\ \hline
+    Article-level & Context đầy đủ & Quá lớn (>2000 tokens) & Không \\ \hline
+    \textbf{Paragraph-level} & Mapping citation format & Phù hợp với cấu trúc pháp lý & Có \\ \hline
+    \end{tabular}
+    \caption{Các chiến lược Chunking}
+    \label{tab:chunking_strategy}
+\end{table}
+
+\textbf{Context Enrichment}:
+
+Mỗi chunk có hai phiên bản text:
+\begin{itemize}
+    \item \texttt{text}: Nội dung thuần túy, dùng để hiển thị
+    \item \texttt{text\_with\_context}: Prefix với law\_title + article\_title, dùng để embedding
+\end{itemize}
+
+\begin{verbatim}
+text: "\japan{使用者は、労働者に、休憩時間を除き一週間について四十時間を超えて、労働させてはならない。}"
+
+text_with_context: "\japan{労働基準法} \japan{第三十二条} (\japan{労働時間}) \japan{使用者は、労働者に、}..."
+\end{verbatim}
+
+\subsection{Embedding Pipeline}
+
+\textbf{Model lựa chọn}: OpenAI \texttt{text-embedding-3-large}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Tiêu chí} & \textbf{text-embedding-3-large} & \textbf{Lý do chọn} \\ \hline
+    Dimension & 3072 & Độ chính xác cao \\ \hline
+    Multilingual & Có & Hỗ trợ Việt-Nhật \\ \hline
+    Benchmark (MTEB) & Top-tier & Performance tốt \\ \hline
+    Cost & \$0.00013/1K tokens & Chấp nhận được \\ \hline
+    \end{tabular}
+    \caption{Lựa chọn Embedding Model}
+    \label{tab:embedding_model}
+\end{table}
+
+\textbf{Quy trình Embedding:}
+\begin{verbatim}
+1. Load chunks từ JSON
+2. Batch embedding (100 chunks/batch)
+3. Dense vector: text-embedding-3-large
+4. Sparse vector: SPLADE (cho BM25-style search)
+5. Upsert to Qdrant với payload metadata
+\end{verbatim}
+
+\subsection{Hybrid Indexing (Qdrant)}
+
+\textbf{Collection Schema:}
+
+\begin{verbatim}
+collection_config = {
+    "name": "japanese_laws_hybrid",
+    "vectors": {
+        "dense": {
+            "size": 3072,           # OpenAI embedding dimension
+            "distance": "Cosine"
+        }
+    },
+    "sparse_vectors": {
+        "sparse": {
+            "modifier": "IDF"       # BM25 style weighting
+        }
+    }
+}
+\end{verbatim}
+
+\textbf{Payload Schema:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Field} & \textbf{Type} & \textbf{Mô tả} \\ \hline
+    \texttt{chunk\_id} & string & Unique identifier \\ \hline
+    \texttt{law\_id} & string & e-Gov law ID \\ \hline
+    \texttt{law\_title} & string & Tên luật \\ \hline
+    \texttt{article\_num} & string & Số điều \\ \hline
+    \texttt{article\_title} & string & Tiêu đề điều \\ \hline
+    \texttt{paragraph\_num} & string & Số khoản \\ \hline
+    \texttt{text} & string & Nội dung chunk \\ \hline
+    \texttt{text\_with\_context} & string & Nội dung + context \\ \hline
+    \texttt{category} & string & Phân loại (Lao động, Thuế, etc.) \\ \hline
+    \end{tabular}
+    \caption{Payload Schema}
+    \label{tab:payload_schema}
+\end{table}
+
+\textbf{Hybrid Search với RRF Fusion:}
+\begin{verbatim}
+# Prefetch từ cả dense và sparse
+prefetch = [
+    Prefetch(query=dense_vector, using="dense", limit=20),
+    Prefetch(query=sparse_vector, using="sparse", limit=20),
+]
+
+# Fusion bằng Reciprocal Rank Fusion
+query = Query(fusion=Fusion.RRF, prefetch=prefetch)
+\end{verbatim}
+
+\section{Thiết kế Knowledge Graph}
+\label{sec:kg_design}
+
+\subsection{Mô hình dữ liệu Graph (Node Types)}
+
+Hệ thống sử dụng \textbf{Neo4j Aura} để lưu trữ knowledge graph với các node types sau:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_mo_hinh_du_lieu_graph}
+    \caption{Mô hình dữ liệu Knowledge Graph}
+    \label{fig:kg_schema}
+\end{figure}
+
+\textbf{Node Properties:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|p{5cm}|}
+    \hline
+    \textbf{Node Type} & \textbf{Properties} & \textbf{Mô tả} \\ \hline
+    Law & law\_id, law\_title, category, promulgation\_date & Luật (cấp cao nhất) \\ \hline
+    Chapter & chapter\_num, chapter\_title, law\_id & Chương trong luật \\ \hline
+    Article & article\_num, article\_title, article\_caption, law\_id & Điều luật \\ \hline
+    Paragraph & paragraph\_num, text, chunk\_id & Khoản (liên kết với Qdrant) \\ \hline
+    \end{tabular}
+    \caption{Node Properties trong Knowledge Graph}
+    \label{tab:node_properties}
+\end{table}
+
+\subsection{Các loại quan hệ (Relationship Types)}
+
+\begin{verbatim}
+// Hierarchical relationships (Quan hệ phân cấp)
+(:Law)-[:HAS_CHAPTER]->(:Chapter)
+(:Chapter)-[:HAS_ARTICLE]->(:Article)
+(:Article)-[:HAS_PARAGRAPH]->(:Paragraph)
+
+// Cross-reference relationships (Quan hệ tham chiếu chéo)
+(:Article)-[:REFERENCES {ref_type: "explicit"}]->(:Article)
+(:Article)-[:REFERENCES {ref_type: "implicit"}]->(:Article)
+
+// Same-law relationship
+(:Article)-[:SAME_LAW]->(:Article)
+\end{verbatim}
+
+\textbf{Mô tả các quan hệ:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Relationship} & \textbf{Mô tả} & \textbf{Ví dụ} \\ \hline
+    HAS\_CHAPTER & Luật chứa chương & \japan{労働基準法} $\rightarrow$ \japan{第四章} \\ \hline
+    HAS\_ARTICLE & Chương chứa điều & \japan{第四章} $\rightarrow$ \japan{第三十二条} \\ \hline
+    HAS\_PARAGRAPH & Điều chứa khoản & \japan{第三十二条} $\rightarrow$ \japan{第一項} \\ \hline
+    REFERENCES & Điều tham chiếu điều khác & \japan{第}36\japan{条} $\rightarrow$ \japan{第}32\japan{条} \\ \hline
+    \end{tabular}
+    \caption{Các loại quan hệ trong Graph}
+    \label{tab:graph_relationships}
+\end{table}
+
+\subsection{Graph Schema Design}
+
+\textbf{Cypher Schema:}
+
+\begin{verbatim}
+// Law node
+(:Law {
+    law_id: "322AC0000000049",
+    law_title: "\japan{労働基準法}",
+    category: "\japan{労働}",
+    promulgation_date: "1947-04-07"
+})
+
+// Article node
+(:Article {
+    article_num: "\japan{第三十二条}",
+    article_title: "\japan{労働時間}",
+    article_caption: "\japan{法定労働時間}",
+    law_id: "322AC0000000049"
+})
+
+// Paragraph node với linking to Vector Store
+(:Paragraph {
+    paragraph_num: "1",
+    text: "\japan{使用者は、労働者に}...",
+    chunk_id: "chunk_32_1"  // <- Links to Qdrant
+})
+\end{verbatim}
+
+\subsection{Connection với Vector Store (chunk\_id linking)}
+
+\textbf{Chiến lược liên kết Graph $\leftrightarrow$ Vector:}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_lien_ket_graph_vector}
+    \caption{Liên kết giữa Neo4j và Qdrant}
+    \label{fig:graph_vector_link}
+\end{figure}
+
+\textbf{Quy trình tích hợp:}
+\begin{enumerate}
+    \item Graph search trả về \texttt{chunk\_id}
+    \item Dùng \texttt{chunk\_id} để fetch full text từ Qdrant
+    \item Kết hợp thông tin cấu trúc (từ Graph) với nội dung (từ Vector)
+\end{enumerate}
+
+\section{Thiết kế RAG Pipeline}
+\label{sec:rag_pipeline}
+
+\subsection{Query Translation \& Multi-Query Expansion}
+
+\textbf{Vấn đề}: Query tiếng Việt cần được dịch sang tiếng Nhật để tìm kiếm hiệu quả trong corpus tiếng Nhật.
+
+\textbf{Giải pháp}: Sử dụng GPT-4o-mini cho translation + expansion
+
+\begin{verbatim}
+# Input
+query = "Thời gian làm việc tối đa mỗi tuần là bao nhiêu?"
+
+# Output từ Query Translator
+{
+    "translated_query": "\japan{週の最大労働時間は何時間ですか}",
+    "keywords": ["\japan{法定労働時間}", "\japan{週}40\japan{時間}", "\japan{労働基準法}"],
+    "search_queries": [
+        "\japan{法定労働時間とは}",
+        "\japan{週の労働時間制限}",
+        "\japan{労働基準法第}32\japan{条}"
+    ]
+}
+\end{verbatim}
+
+\textbf{Multi-Query Expansion:}
+\begin{itemize}
+    \item Từ 1 query gốc $\rightarrow$ 3-5 search queries
+    \item Mỗi query tập trung vào khía cạnh khác nhau
+    \item Tăng recall, đa dạng hóa kết quả
+\end{itemize}
+
+\subsection{Hybrid Retrieval (Vector Search)}
+
+\textbf{Hybrid Search = Dense + Sparse:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Phương pháp} & \textbf{Ưu điểm} & \textbf{Nhược điểm} \\ \hline
+    Dense (Semantic) & Hiểu ý nghĩa & Có thể miss exact match \\ \hline
+    Sparse (BM25) & Exact keyword match & Không hiểu synonym \\ \hline
+    \textbf{Hybrid (RRF)} & Kết hợp cả hai & Tốt nhất cho legal domain \\ \hline
+    \end{tabular}
+    \caption{So sánh các phương pháp Retrieval}
+    \label{tab:retrieval_methods}
+\end{table}
+
+\textbf{Reciprocal Rank Fusion (RRF):}
+\[ score(d) = \sum \frac{1}{k + \text{rank}_i(d)} \]
+Trong đó $k = 60$ (constant), $\text{rank}_i(d)$ là rank của document d trong kết quả tìm kiếm thứ i.
+
+\textbf{Luồng xử lý:}
+\begin{verbatim}
+Search Queries -> [Dense Search] -> Top-20 candidates
+               -> [Sparse Search] -> Top-20 candidates
+               -> RRF Fusion -> Top-K merged results
+\end{verbatim}
+
+\subsection{Reranking}
+
+\textbf{Model}: Cross-encoder \texttt{mMarco-mMiniLM}
+
+\textbf{Tại sao cần Reranking?}
+\begin{itemize}
+    \item Bi-encoder (embedding) nhanh nhưng approximate
+    \item Cross-encoder chậm hơn nhưng chính xác hơn
+    \item Two-stage: Retrieval (recall) $\rightarrow$ Reranking (precision)
+\end{itemize}
+
+\textbf{Quy trình:}
+\begin{verbatim}
+Top-20 candidates -> Cross-encoder scoring -> Top-5 reranked
+\end{verbatim}
+
+\subsection{LLM Generation với citation}
+
+\textbf{Model}: GPT-4o-mini
+
+\textbf{Prompt Engineering:}
+\begin{verbatim}
+Bạn là chuyên gia tư vấn pháp luật Nhật Bản.
+Trả lời bằng tiếng Việt, giữ thuật ngữ Nhật trong ngoặc [].
+Trích dẫn nguồn bằng [1], [2], etc.
+
+Nguồn:
+[1] \japan{労働基準法} \japan{第三十二条}: "\japan{使用者は、労働者に}..."
+[2] ...
+
+Câu hỏi: {query}
+\end{verbatim}
+
+\textbf{Output format:}
+\begin{verbatim}
+Theo quy định tại Điều 32 [\japan{第三十二条}] của Luật Tiêu chuẩn Lao động 
+[\japan{労働基準法}], thời gian làm việc tối đa là 40 giờ/tuần [1].
+\end{verbatim}
+
+\section{Thiết kế GraphRAG Pipeline}
+\label{sec:graphrag_pipeline}
+
+\subsection{Query Routing (Khi nào dùng Graph vs Vector)}
+
+\textbf{Query Router}: Phân tích query để quyết định phương pháp tìm kiếm
+
+\begin{verbatim}
+class QueryType(Enum):
+    SEMANTIC = "semantic"           # -> Vector search only
+    ENTITY_LOOKUP = "entity_lookup" # -> Graph search only
+    MULTI_HOP = "multi_hop"         # -> Graph traversal
+    HYBRID = "hybrid"               # -> Both Graph + Vector
+\end{verbatim}
+
+\textbf{Routing Logic:}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Query Pattern} & \textbf{Query Type} & \textbf{Search Method} \\ \hline
+    "\japan{労働時間について教えて}" & SEMANTIC & Vector only \\ \hline
+    "\japan{第}32\japan{条の内容は}?" & ENTITY\_LOOKUP & Graph lookup $\rightarrow$ Vector \\ \hline
+    "\japan{第}32\japan{条に関連する条文は}?" & MULTI\_HOP & Graph traversal \\ \hline
+    "\japan{労働基準法第}32\japan{条について}" & HYBRID & Graph + Vector \\ \hline
+    \end{tabular}
+    \caption{Logic định tuyến truy vấn}
+    \label{tab:query_routing}
+\end{table}
+
+\subsection{Entity Extraction từ query}
+
+\textbf{Pattern Matching:}
+\begin{verbatim}
+ENTITY_PATTERNS = [
+    # \japan{労働基準法第}32\japan{条} -> (\japan{労働基準法}, 32)
+    (r'([\japan{ぁ}-\japan{んァ}-\japan{ン一}-\japan{龯}]+\japan{法})\japan{第}(\d+)\japan{条}', 'law_article'),
+    
+    # \japan{第}32\japan{条} (standalone article)
+    (r'\japan{第}(\d+)\japan{条}(?:\japan{の}(\d+))?', 'article_only'),
+    
+    # Law names
+    (r'([\japan{ぁ}-\japan{んァ}-\japan{ン一}-\japan{龯}]+\japan{法})', 'law_name'),
+]
+\end{verbatim}
+
+\textbf{Ví dụ extraction:}
+\begin{verbatim}
+Query: "\japan{労働基準法第}32\japan{条の内容を教えてください}"
+Entities: [("\japan{労働基準法第}32\japan{条}", "law_article")]
+\end{verbatim}
+
+\subsection{Graph Search (find\_article, find\_related\_articles)}
+
+\textbf{GraphService Methods:}
+
+\begin{verbatim}
+class GraphService:
+    def find_article(self, law_title: str, article_num: str) -> GraphResult:
+        """Tìm điều luật cụ thể theo tên luật và số điều"""
+        
+    def find_related_articles(self, law_id: str, article_num: str, 
+                              depth: int = 2) -> List[GraphResult]:
+        """Tìm các điều có quan hệ REFERENCES"""
+        
+    def search_by_keyword(self, keyword: str) -> List[GraphResult]:
+        """Tìm theo keyword trong article_title/caption"""
+        
+    def get_law_structure(self, law_id: str) -> dict:
+        """Lấy cấu trúc phân cấp của luật"""
+\end{verbatim}
+
+\textbf{Cypher Query Example:}
+\begin{verbatim}
+// Find article
+MATCH (l:Law)-[:HAS_CHAPTER]->(c:Chapter)-[:HAS_ARTICLE]->(a:Article)
+WHERE l.law_title CONTAINS $law_title AND a.article_num = $article_num
+RETURN l, a
+
+// Find related articles
+MATCH (a:Article {article_num: $article_num})
+      -[:REFERENCES*1..2]->(related:Article)
+RETURN related
+\end{verbatim}
+
+\subsection{Result Fusion (Kết hợp Graph + Vector results)}
+
+\textbf{Fusion Strategy:}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_result_fusion_flow}
+    \caption{Chiến lược kết hợp kết quả (Result Fusion)}
+    \label{fig:fusion_strategy}
+\end{figure}
+
+\textbf{Score Calculation:}
+\begin{verbatim}
+# Graph results get a boost
+final_score = vector_score * (1 + graph_boost)
+# where graph_boost = 0.3 if found in graph, else 0
+\end{verbatim}
+
+\section{Thiết kế LangGraph Agent}
+\label{sec:agent_design}
+
+\subsection{State Graph Definition}
+
+\textbf{State Definition:}
+\begin{verbatim}
+class LegalRAGState(TypedDict):
+    query: str                      # Original Vietnamese query
+    translated_query: str           # Japanese translation
+    search_queries: list[str]       # Expanded search queries
+    documents: list[dict]           # Retrieved documents
+    document_grades: list[str]      # "relevant" | "not_relevant"
+    reranked_documents: list[dict]  # After cross-encoder
+    answer: str                     # Final answer
+    sources: list[dict]             # Citation sources
+    rewrite_count: int              # Retry counter (max 2)
+\end{verbatim}
+
+\subsection{Các Node (Translate, Retrieve, Grade, Rerank, Generate, Rewrite)}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Node} & \textbf{Input} & \textbf{Output} & \textbf{Chức năng} \\ \hline
+    \texttt{translate} & query & translated\_query, search\_queries & Dịch và mở rộng query \\ \hline
+    \texttt{retrieve} & search\_queries & documents & Tìm kiếm hybrid \\ \hline
+    \texttt{grade} & documents & document\_grades & Đánh giá relevance \\ \hline
+    \texttt{rerank} & documents & reranked\_documents & Xếp hạng lại \\ \hline
+    \texttt{generate} & reranked\_documents & answer, sources & Sinh câu trả lời \\ \hline
+    \texttt{rewrite} & query & search\_queries & Viết lại query \\ \hline
+    \end{tabular}
+    \caption{Các Node trong LangGraph Agent}
+    \label{tab:agent_nodes}
+\end{table}
+
+\subsection{Conditional Edge và Self-Correction Loop}
+
+\textbf{Graph Structure:}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hinh_langgraph_flow}
+    \caption{Sơ đồ LangGraph}
+    \label{fig:langgraph_flow}
+\end{figure}
+
+\textbf{Decision Function:}
+\begin{verbatim}
+def should_rewrite(state: LegalRAGState) -> str:
+    relevant_count = sum(1 for g in state["document_grades"] if g == "relevant")
+    
+    if relevant_count >= 2 or state["rewrite_count"] >= 2:
+        return "rerank"  # Proceed to reranking
+    else:
+        return "rewrite"  # Try rewriting query
+\end{verbatim}
+
+\section{Thiết kế API (REST Endpoints)}
+\label{sec:api_design}
+
+\subsection{API Schema}
+
+\textbf{Base URL:} \texttt{https://api.norman.example.com/api}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|l|}
+    \hline
+    \textbf{Method} & \textbf{Endpoint} & \textbf{Mô tả} & \textbf{Request Body} & \textbf{Response} \\ \hline
+    GET & \texttt{/health} & Health check & - & HealthResponse \\ \hline
+    POST & \texttt{/search} & Vector search & SearchQuery & SearchResponse \\ \hline
+    POST & \texttt{/chat} & RAG Chat & ChatQuery & ChatResponse \\ \hline
+    POST & \texttt{/translate} & Dịch văn bản & TranslateRequest & TranslateResponse \\ \hline
+    \end{tabular}
+    \caption{Danh sách API Endpoints}
+    \label{tab:api_endpoints}
+\end{table}
+
+\subsection{Request/Response Schemas}
+
+\textbf{SearchQuery:}
+\begin{verbatim}
+{
+    "query": "\japan{労働時間の制限}",
+    "top_k": 5,
+    "filters": {"category": "\japan{労働}"}
+}
+\end{verbatim}
+
+\textbf{ChatQuery:}
+\begin{verbatim}
+{
+    "query": "Thời gian làm việc tối đa mỗi tuần?",
+    "top_k": 5,
+    "use_agent": false
+}
+\end{verbatim}
+
+\textbf{ChatResponse:}
+\begin{verbatim}
+{
+    "answer": "Theo quy định tại Điều 32 [\japan{第三十二条}]...",
+    "sources": [
+        {
+            "law_title": "\japan{労働基準法}",
+            "article": "\japan{第三十二条}",
+            "text": "\japan{使用者は、労働者に}...",
+            "score": 0.85
+        }
+    ],
+    "query": "Thời gian làm việc tối đa mỗi tuần?",
+    "processing_time_ms": 1250.5
+}
+\end{verbatim}
+
+\textbf{TranslateResponse:}
+\begin{verbatim}
+{
+    "original": "\japan{使用者は、労働者に}...",
+    "translated": "Người sử dụng lao động không được...",
+    "processing_time_ms": 850.2
+}
+\end{verbatim}
+
+\chapter*{Kết chương}
+\addcontentsline{toc}{chapter}{Kết chương}
+
+Chương này đã trình bày phân tích yêu cầu và thiết kế chi tiết của hệ thống Norman - Chatbot tư vấn pháp luật Nhật Bản. Hệ thống được thiết kế với kiến trúc multi-layer, bao gồm:
+
+\begin{itemize}
+    \item \textbf{Data Pipeline}: Thu thập từ e-Gov API, chunking paragraph-level, hybrid indexing
+    \item \textbf{Knowledge Graph}: Neo4j với cấu trúc Law $\rightarrow$ Chapter $\rightarrow$ Article $\rightarrow$ Paragraph
+    \item \textbf{RAG Pipeline}: Query translation, hybrid search, reranking, LLM generation
+    \item \textbf{GraphRAG Pipeline}: Query routing, entity extraction, graph search, result fusion
+    \item \textbf{LangGraph Agent}: Self-correction loop với document grading
+    \item \textbf{REST API}: 4 endpoints cho search, chat, translate, và health check
+\end{itemize}
+
+Chương tiếp theo sẽ trình bày chi tiết quá trình triển khai và cài đặt từng thành phần của hệ thống.

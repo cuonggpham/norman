@@ -1,0 +1,295 @@
+Chương 5 đã đánh giá hiệu quả của hệ thống với framework RAGAS. Chương này sẽ trình bày các hạn chế của hệ thống và đề xuất hướng phát triển, bao gồm: (i) hạn chế hiện tại trong phần \ref{sec:limitations}, (ii) hướng phát triển trong phần \ref{sec:future_work}, và (iii) kết luận trong phần \ref{sec:conclusion}.
+
+
+\section{Hạn chế hiện tại}
+\label{sec:limitations}
+
+\subsection{Latency vẫn cao}
+
+\begin{itemize}
+    \item 8-10 giây response time vẫn chậm hơn ChatGPT ($\sim$1s)
+    \item Bottleneck: LLM calls (translation + generation) chiếm $\sim$70\% latency
+    \item Network latency với các external services (Pinecone, OpenAI API)
+\end{itemize}
+
+\subsection{Coverage cần mở rộng}
+
+\begin{itemize}
+    \item 431 luật đã cover tốt lĩnh vực tài chính và lao động
+    \item Còn thiếu: dân sự (\japan{民法}), thương mại (\japan{商法}), xuất nhập cảnh (\japan{出入国管理法})
+    \item Các hiệp định song phương chưa được index
+\end{itemize}
+
+\subsection{Không có conversation memory}
+
+\begin{itemize}
+    \item Mỗi query được xử lý độc lập
+    \item Không hỗ trợ follow-up questions như "Vậy còn trường hợp ngoại lệ?"
+\end{itemize}
+
+\subsection{Cross-reference extraction còn sơ sài}
+
+\begin{itemize}
+    \item Regex-based extraction bỏ sót nhiều implicit references
+    \item Các cách diễn đạt phức tạp chưa được xử lý
+\end{itemize}
+
+\section{Hướng phát triển hệ thống RAG}
+\label{sec:future_work}
+
+\subsection{Cải thiện Retrieval Quality}
+
+\subsubsection{Adaptive Chunking Strategy}
+
+\textbf{Hiện tại:} Fixed-size chunking với overlap 200 tokens gây ra:
+\begin{itemize}
+    \item Split mid-sentence làm mất context
+    \item Related clauses bị tách rời
+\end{itemize}
+
+\textbf{Đề xuất:} Semantic-aware chunking với LLM assistance:
+\begin{itemize}
+    \item Sử dụng LLM để xác định boundary tự nhiên của legal clauses
+    \item Hierarchical chunking với 3 levels: Article $\rightarrow$ Section $\rightarrow$ Clause
+    \item Automatic context injection cho các chunks con
+\end{itemize}
+
+\textbf{Expected improvement:} +8-12\% Context Recall dựa trên benchmarks từ các nghiên cứu tương tự.
+
+\subsubsection{Query Understanding Enhancement}
+
+\textbf{Pipeline đề xuất:}
+\begin{enumerate}
+    \item \textbf{Query Classification}: Phân loại query thành categories (factual, procedural, comparative, hypothetical)
+    \item \textbf{Intent Detection}: Xác định user intent để điều chỉnh retrieval strategy
+    \item \textbf{Query Expansion}: Sinh synonyms và related terms cho tiếng Nhật pháp lý
+\end{enumerate}
+
+\subsubsection{Fine-tuned Embedding Model}
+
+\textbf{Approach:} Contrastive learning trên legal domain:
+\begin{itemize}
+    \item Training data: (query\_vi, positive\_doc\_ja, negative\_docs)
+    \item Base model: multilingual-e5-large
+    \item Adapter layer để preserve general knowledge
+\end{itemize}
+
+\textbf{Data requirements:}
+\begin{itemize}
+    \item 10,000+ triplets từ query logs
+    \item Hard negatives mining từ similar but irrelevant documents
+\end{itemize}
+
+\subsection{Advanced RAG Architectures}
+
+\subsubsection{CRAG (Corrective RAG)}
+
+Implement self-correction mechanism:
+\begin{enumerate}
+    \item \textbf{Confidence Scoring}: LLM đánh giá confidence của retrieved documents
+    \item \textbf{Web Search Fallback}: Nếu confidence $<$ threshold, trigger web search
+    \item \textbf{Knowledge Refinement}: Combine retrieved + web results
+\end{enumerate}
+
+\subsubsection{Self-RAG}
+
+Implement reflection tokens để control generation:
+\begin{itemize}
+    \item \textbf{[Retrieve]}: Quyết định có cần retrieve thêm không
+    \item \textbf{[IsRel]}: Đánh giá relevance của retrieved passages
+    \item \textbf{[IsSup]}: Verify claims được support bởi context
+    \item \textbf{[IsUse]}: Đánh giá usefulness của generated response
+\end{itemize}
+
+\subsubsection{Agentic RAG với Multi-Step Reasoning}
+
+\textbf{Architecture đề xuất:}
+\begin{verbatim}
+User Query
+    ↓
+Query Analyzer Agent
+    ↓
+[Decompose into sub-queries if complex]
+    ↓
+Parallel Retrieval Agents
+    ↓
+Evidence Aggregator Agent
+    ↓
+Reasoning Agent (with chain-of-thought)
+    ↓
+Verification Agent
+    ↓
+Response Generator
+\end{verbatim}
+
+\textbf{Tools cho Agent:}
+\begin{itemize}
+    \item \texttt{search\_vector}: Semantic search trên Pinecone
+    \item \texttt{search\_keyword}: BM25 search trên Elasticsearch
+    \item \texttt{search\_graph}: Traverse Neo4j knowledge graph
+    \item \texttt{calculate\_tax}: Tool tính thuế với các parameters
+    \item \texttt{lookup\_table}: Tra bảng phí, mức lương tối thiểu
+    \item \texttt{cross\_reference}: Tìm các điều luật liên quan
+\end{itemize}
+
+\subsection{Full GraphRAG Implementation}
+
+\subsubsection{Entity Extraction Enhancement}
+
+\textbf{Hiện tại:} Regex-based extraction với limited pattern matching
+
+\textbf{Đề xuất:} NER model fine-tuned cho Japanese legal text
+
+\textbf{Entity types:}
+\begin{itemize}
+    \item LAW\_ARTICLE: \japan{所得税法第}27\japan{条}
+    \item LEGAL\_CONCEPT: \japan{源泉徴収}, \japan{確定申告}
+    \item ORGANIZATION: \japan{国税庁}, \japan{年金機構}
+    \item MONETARY\_AMOUNT: 103\japan{万円}, 38\japan{万円}
+    \item TIME\_PERIOD: \japan{毎年}6\japan{月}30\japan{日まで}
+    \item CONDITION: \japan{居住者である場合}
+\end{itemize}
+
+\subsubsection{Relationship Classification}
+
+\textbf{Relationship types:}
+\begin{itemize}
+    \item AMENDS: Điều này sửa đổi điều khác
+    \item REFERENCES: Điều này tham chiếu điều khác
+    \item SUPERSEDES: Điều này thay thế điều khác
+    \item EXCEPTION\_TO: Điều này là ngoại lệ của
+    \item REQUIRES: Điều kiện tiên quyết
+    \item DEFINES: Định nghĩa thuật ngữ
+\end{itemize}
+
+\subsubsection{Multi-hop Reasoning Queries}
+
+\textbf{Example flow:}
+\begin{verbatim}
+Query: "Người nước ngoài có visa kỹ sư, làm việc 2 năm, có được nhận bảo hiểm thất nghiệp không?"
+
+Step 1: Retrieve visa conditions -> \japan{技術・人文知識・国際業務}
+Step 2: Check insurance eligibility -> \japan{雇用保険法第}6\japan{条}
+Step 3: Verify work duration requirement -> \japan{被保険者期間}
+Step 4: Cross-check foreign worker exceptions -> \japan{外国人労働者特例}
+Step 5: Aggregate and generate response
+\end{verbatim}
+
+\subsection{Hybrid Search Optimization}
+
+\subsubsection{Adaptive Fusion Weights}
+
+\textbf{Hiện tại:} Fixed ratio 0.7 dense / 0.3 sparse
+
+\textbf{Đề xuất:} Query-dependent dynamic weights
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Query Type} & \textbf{Dense Weight} & \textbf{Sparse Weight} & \textbf{Rationale} \\ \hline
+    Conceptual & 0.8 & 0.2 & Semantic understanding \\ \hline
+    Specific article & 0.3 & 0.7 & Exact match needed \\ \hline
+    Mixed & 0.6 & 0.4 & Balanced approach \\ \hline
+    \end{tabular}
+    \caption{Trọng số Dynamic Fusion}
+    \label{tab:fusion_weights}
+\end{table}
+
+\textbf{Implementation:} Train classifier để predict optimal weights per query.
+
+\subsubsection{Late Interaction Models (ColBERT)}
+
+Thay vì single-vector representation, sử dụng token-level interaction:
+\begin{itemize}
+    \item Preserve fine-grained matching signals
+    \item Better handling cho long documents
+    \item Expected: +5-8\% accuracy với minimal latency increase (với GPU)
+\end{itemize}
+
+\subsection{Caching và Optimization}
+
+\subsubsection{Multi-level Caching với Redis}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Cache Level} & \textbf{Content} & \textbf{TTL} & \textbf{Hit Rate Expected} \\ \hline
+    Query embedding & Vector representation & 24h & 35\% \\ \hline
+    Translation & Vi$\rightarrow$Ja translations & 7d & 45\% \\ \hline
+    Search results & Top-k documents & 1h & 25\% \\ \hline
+    Full response & Complete answers & 6h & 15\% \\ \hline
+    \end{tabular}
+    \caption{Chiến lược Multi-level Caching}
+    \label{tab:caching_strategy}
+\end{table}
+
+\textbf{Expected latency reduction:} $<$ 1s cho cached queries (85\% improvement)
+
+\subsubsection{Speculative Retrieval}
+
+Pre-fetch related documents dựa trên:
+\begin{itemize}
+    \item Common follow-up patterns
+    \item User browsing behavior
+    \item Related legal concepts
+\end{itemize}
+
+\subsection{Evaluation Pipeline Enhancement}
+
+\subsubsection{Continuous Evaluation}
+
+Automated evaluation pipeline chạy hàng tuần:
+\begin{itemize}
+    \item Monitor metric drift
+    \item A/B testing cho new configurations
+    \item Alert khi performance degradation
+\end{itemize}
+
+\subsubsection{Human-in-the-loop Feedback}
+
+\begin{itemize}
+    \item Thumbs up/down on responses
+    \item Explicit feedback collection
+    \item Use feedback for model fine-tuning
+\end{itemize}
+
+\section{Kết luận}
+\label{sec:conclusion}
+
+\subsection{Những gì đã đạt được}
+
+Qua đồ án này, một hệ thống RAG hoàn chỉnh đã được xây dựng với các thành phần:
+
+\begin{itemize}
+    \item \textbf{End-to-end RAG pipeline}: Từ data ingestion đến response generation
+    \item \textbf{431 văn bản luật} được index với \textbf{206,014 chunks}
+    \item \textbf{Cross-lingual retrieval}: Vietnamese query $\rightarrow$ Japanese documents
+    \item \textbf{Hybrid search}: Kết hợp semantic (dense) và keyword (sparse)
+    \item \textbf{Two-stage retrieval}: Bi-encoder + cross-encoder reranking
+    \item \textbf{LangGraph agent}: Self-correction loop cho complex queries
+    \item \textbf{GraphRAG integration}: Knowledge graph với Neo4j
+\end{itemize}
+
+Hệ thống đạt \textbf{Faithfulness 0.85} trên RAGAS evaluation, cho thấy câu trả lời được grounding tốt vào context.
+
+\subsection{Bài học kỹ thuật}
+
+\textbf{1. Data quality $>$ Model size}
+
+Chunking strategy phù hợp và context enrichment có impact lớn hơn việc sử dụng embedding model đắt tiền. Paragraph-level chunking với context prefix cải thiện retrieval 15-20\% so với naive fixed-size chunking.
+
+\textbf{2. Hybrid approach outperforms single method}
+
+Dense + Sparse embedding, Vector + Graph search, Bi-encoder + Cross-encoder. Combination thường tốt hơn single method.
+
+\textbf{3. Efficiency without compromise}
+
+Việc tìm ra model mMiniLM cho thấy có thể giữ high precision của cross-encoder mà vẫn đạt latency thấp. Selection model phù hợp quan trọng hơn là blindly disabling features.
+
+\subsection{Tổng kết}
+
+Đồ án này là một trải nghiệm học tập quý giá về việc xây dựng hệ thống AI ứng dụng thực tế. Hệ thống chưa hoàn hảo và còn nhiều điểm cần cải thiện, đặc biệt là hướng phát triển sâu về RAG với các advanced architectures như Self-RAG, CRAG, và Agentic RAG.
+
+Tuy nhiên, mục tiêu ban đầu đã đạt được: một công cụ giúp người Việt Nam tại Nhật Bản tiếp cận thông tin pháp luật dễ dàng hơn, bằng chính ngôn ngữ của họ, với trích dẫn nguồn chính xác.
