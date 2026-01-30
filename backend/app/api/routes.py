@@ -124,25 +124,45 @@ async def translate(request: TranslateRequest):
             detail="Gemini API key is not configured. Please set GEMINI_API_KEY in .env"
         )
     
-    prompt = f"""Bạn là một chuyên gia dịch thuật pháp luật Nhật Bản. 
-Hãy dịch đoạn văn bản luật tiếng Nhật sau sang tiếng Việt.
+    prompt = f"""Bạn là chuyên gia dịch thuật pháp luật Nhật Bản sang tiếng Việt.
 
-Yêu cầu:
-- Giữ nguyên các thuật ngữ pháp lý quan trọng trong ngoặc []
-- Dịch chính xác, đúng ngữ cảnh pháp luật
-- Giữ cấu trúc câu rõ ràng
+## QUY TẮC DỊCH BẮT BUỘC:
 
-Văn bản tiếng Nhật:
+### 1. Thuật ngữ pháp lý
+- Giữ nguyên tiếng Nhật kèm dịch nghĩa trong ngoặc đơn cho thuật ngữ quan trọng
+- Ví dụ: 居住者 (cư dân/người cư trú), 所得税 (thuế thu nhập), 予定納税 (nộp thuế tạm tính)
+
+### 2. Số hiệu pháp luật
+- Giữ nguyên format: Điều 104 Khoản 1 (第百四条第一項)
+- Năm Chiêu Hòa (昭和) → ghi cả hai: "năm Chiêu Hòa 42 (1967)"
+
+### 3. Cấu trúc văn bản
+- Tách các mục/khoản thành dòng riêng với đánh số rõ ràng
+- Nếu có "一、二、三" hoặc "１、２、３" → format thành "1., 2., 3."
+- Câu dài → ngắt dòng hợp lý, giữ logic pháp lý
+
+### 4. Giải thích ngữ cảnh
+- Các cụm như "以下「...」という" → "(sau đây gọi là '...')"
+- Điều kiện ngoại lệ → làm rõ bằng dấu gạch đầu dòng
+
+### 5. Format output
+- Dịch tự nhiên, dễ đọc cho người Việt
+- KHÔNG thêm giải thích ngoài văn bản gốc
+- KHÔNG bỏ sót nội dung nào
+
+---
+VĂN BẢN GỐC (日本語):
 {request.text}
 
-Bản dịch tiếng Việt:"""
+---
+BẢN DỊCH TIẾNG VIỆT:"""
 
     try:
         from google import genai
         
         client = genai.Client(api_key=gemini_api_key)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config={
                 "temperature": 0.2,

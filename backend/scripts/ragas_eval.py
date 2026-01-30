@@ -33,65 +33,82 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Test dataset with ground truth answers
-# Aligned with actual indexed laws in the system
+# Ground truth viết lại dựa trên nội dung THỰC TẾ từ chunks trong database
+# Categories: 労働, 金融・保険, 社会保険, 国税
 TEST_DATASET = [
-    # 労働基準法 (322AC0000000049) - 429 chunks
+    # ============ 労働基準法 (322AC0000000049) - LUẬT TIÊU CHUẨN LAO ĐỘNG ============
+    # Source: 第三十二条 - "一週間について四十時間を超えて...労働させてはならない"
     {
         "question": "Thời gian làm việc tối đa mỗi tuần theo Luật tiêu chuẩn lao động (労働基準法) là bao nhiêu giờ?",
-        "ground_truth": "Theo 労働基準法 Điều 32, thời gian làm việc không được vượt quá 40 giờ mỗi tuần và 8 giờ mỗi ngày. Có thể làm thêm giờ với thỏa thuận theo Điều 36 (三六協定).",
+        "ground_truth": "Theo 労働基準法 第三十二条, người sử dụng lao động không được để người lao động làm việc quá 40 giờ mỗi tuần (休憩時間を除き一週間について四十時間) và quá 8 giờ mỗi ngày (一日について八時間).",
     },
+    # Source: 第三十六条 - "一箇月について四十五時間及び一年について三百六十時間"
     {
-        "question": "Quy định về nghỉ phép năm có lương (年次有給休暇) trong Luật tiêu chuẩn lao động như thế nào?",
-        "ground_truth": "Theo 労働基準法 Điều 39, người lao động được nghỉ phép có lương sau 6 tháng làm việc liên tục với tỷ lệ đi làm trên 80%. Năm đầu được 10 ngày, tăng dần theo thâm niên đến tối đa 20 ngày.",
+        "question": "Giới hạn làm thêm giờ (時間外労働) theo thỏa thuận 36 là bao nhiêu?",
+        "ground_truth": "Theo 労働基準法 第三十六条, giới hạn làm thêm giờ (限度時間) là 45 giờ mỗi tháng (一箇月について四十五時間) và 360 giờ mỗi năm (一年について三百六十時間).",
     },
+
+    # ============ 労働者災害補償保険法 (322AC0000000050) - BẢO HIỂM TAI NẠN LAO ĐỘNG ============
+    # Source: 第二条の二 - "業務上の事由...による労働者の負傷、疾病、障害、死亡等に関して保険給付を行う"
     {
-        "question": "Tiền lương làm thêm giờ (時間外労働) được tính như thế nào theo luật lao động?",
-        "ground_truth": "Theo 労働基準法 Điều 37, tiền làm thêm tối thiểu +25% cho giờ ngoài giờ, +35% cho ngày nghỉ, +25% cho làm đêm (22:00-05:00). Làm thêm quá 60 giờ/tháng: +50%.",
+        "question": "Bảo hiểm tai nạn lao động (労災保険) chi trả cho những trường hợp nào?",
+        "ground_truth": "Theo 労働者災害補償保険法 第二条の二, bảo hiểm thực hiện chi trả (保険給付) cho các trường hợp: thương tích (負傷), bệnh tật (疾病), khuyết tật (障害), tử vong (死亡) của người lao động do nguyên nhân công việc (業務上の事由) hoặc đi lại (通勤).",
     },
-    # 職業安定法 (322AC0000000141) - 248 chunks  
+
+    # ============ 厚生年金保険法 (329AC0000000115) - BẢO HIỂM HƯU TRÍ ============
+    # Source: 第一条 - "労働者の老齢、障害又は死亡について保険給付を行い"
+    # Source: 第二条 - "厚生年金保険は、政府が、管掌する"
     {
-        "question": "Quy định về môi giới việc làm (職業紹介) theo Luật ổn định việc làm là gì?",
-        "ground_truth": "Theo 職業安定法, việc môi giới việc làm được thực hiện bởi Hello Work (公共職業安定所) miễn phí. Các công ty môi giới tư nhân cần giấy phép và không được thu phí người lao động.",
+        "question": "Bảo hiểm hưu trí xã hội (厚生年金保険) nhằm mục đích gì?",
+        "ground_truth": "Theo 厚生年金保険法 第一条, bảo hiểm này thực hiện chi trả bảo hiểm cho người lao động khi già (老齢), khuyết tật (障害) hoặc tử vong (死亡), nhằm ổn định đời sống và nâng cao phúc lợi cho người lao động và gia đình (労働者及びその遺族の生活の安定と福祉の向上).",
     },
-    # 労働者災害補償保険法 (322AC0000000050) - 381 chunks
+    # Source: 第二条 - "厚生年金保険は、政府が、管掌する"
     {
-        "question": "Bảo hiểm tai nạn lao động (労災保険) chi trả những khoản nào?",
-        "ground_truth": "Theo 労働者災害補償保険法, bảo hiểm chi trả: chi phí y tế (療養補償), tiền nghỉ việc (休業補償), trợ cấp thương tật (障害補償), trợ cấp tử vong (遺族補償), chi phí tang lễ.",
+        "question": "Ai quản lý bảo hiểm hưu trí xã hội (厚生年金保険)?",
+        "ground_truth": "Theo 厚生年金保険法 第二条, bảo hiểm hưu trí được chính phủ quản lý (政府が管掌する).",
     },
-    # 金融商品取引法 (323AC0000000025) - 1565 chunks
+
+    # ============ 消費税法 (363AC0000000108) - THUẾ TIÊU DÙNG ============
+    # Source: 第二十九条 - "百分の七・八" "百分の六・二四"
+    {
+        "question": "Thuế tiêu dùng (消費税) ở Nhật Bản có mức thuế suất bao nhiêu?",
+        "ground_truth": "Theo 消費税法 第二十九条, thuế suất tiêu dùng là 7.8% (百分の七・八) cho hàng hóa thông thường, và 6.24% (百分の六・二四) cho hàng hóa giảm thuế (軽減対象). Cộng với thuế địa phương sẽ là 10% và 8%.",
+    },
+
+    # ============ 金融商品取引法 (323AC0000000025) - LUẬT GIAO DỊCH TÀI CHÍNH ============
     {
         "question": "Luật giao dịch sản phẩm tài chính (金融商品取引法) quy định những gì?",
-        "ground_truth": "金融商品取引法 quy định về việc phát hành, giao dịch chứng khoán, bảo vệ nhà đầu tư, công bố thông tin, cấp phép công ty chứng khoán, và xử phạt giao dịch nội gián.",
+        "ground_truth": "Theo 金融商品取引法, luật này quy định về việc phát hành, giao dịch chứng khoán, công bố thông tin, cấp phép công ty chứng khoán, và bảo vệ nhà đầu tư.",
     },
-    # 児童福祉法 (322AC0000000164) - 703 chunks
+
+    # ============ 銀行法 (356AC0000000059) - LUẬT NGÂN HÀNG ============
     {
-        "question": "Luật phúc lợi trẻ em (児童福祉法) quy định những quyền lợi gì cho trẻ em?",
-        "ground_truth": "Theo 児童福祉法, trẻ em có quyền được nuôi dưỡng, giáo dục, bảo vệ. Luật quy định về cơ sở chăm sóc trẻ (保育所), trung tâm hỗ trợ trẻ em, phúc lợi cho trẻ khuyết tật.",
+        "question": "Luật Ngân hàng (銀行法) quy định về những hoạt động nào?",
+        "ground_truth": "Theo 銀行法, ngân hàng được phép thực hiện các hoạt động: nhận tiền gửi, cho vay, chuyển tiền, đổi ngoại tệ. Việc kinh doanh ngân hàng cần được cấp phép.",
     },
-    # 医療法 (323AC0000000205) - 499 chunks
+
+    # ============ 雇用保険法 (349AC0000000116) - BẢO HIỂM VIỆC LÀM ============
     {
-        "question": "Luật y tế (医療法) quy định về bệnh viện và cơ sở y tế như thế nào?",
-        "ground_truth": "Theo 医療法, bệnh viện (病院) có từ 20 giường trở lên, phòng khám (診療所) dưới 20 giường. Luật quy định về cấp phép, tiêu chuẩn thiết bị, nhân sự y tế tối thiểu.",
+        "question": "Bảo hiểm việc làm (雇用保険) nhằm mục đích gì?",
+        "ground_truth": "Theo 雇用保険法, bảo hiểm việc làm nhằm hỗ trợ người lao động khi thất nghiệp, cung cấp trợ cấp thất nghiệp (失業給付) và các chương trình hỗ trợ tìm việc làm.",
     },
-    # 国家公務員法 (322AC0000000120) - 348 chunks
+
+    # ============ 国民健康保険法 (333AC0000000192) - BẢO HIỂM Y TẾ QUỐC DÂN ============
     {
-        "question": "Quy định về công chức nhà nước (国家公務員) theo Luật công chức quốc gia?",
-        "ground_truth": "Theo 国家公務員法, công chức phải trung thành với hiến pháp, không được tham gia hoạt động chính trị, bị hạn chế quyền đình công. Có hệ thống thi tuyển, đánh giá, kỷ luật.",
-    },
-    # 地方自治法 (322AC0000000067) - 813 chunks  
-    {
-        "question": "Luật tự trị địa phương (地方自治法) quy định về chính quyền địa phương như thế nào?",
-        "ground_truth": "Theo 地方自治法, chính quyền địa phương gồm: tỉnh (都道府県), thành phố/thị trấn/làng (市町村). Mỗi cấp có hội đồng (議会) và thủ trưởng (知事/市長) do dân bầu.",
+        "question": "Bảo hiểm y tế quốc dân (国民健康保険) là gì?",
+        "ground_truth": "Theo 国民健康保険法, bảo hiểm y tế quốc dân là chế độ bảo hiểm y tế cho người dân không thuộc các chế độ bảo hiểm sức khỏe khác, chi trả phần lớn chi phí y tế.",
     },
 ]
 
 
-def run_ragas_evaluation(num_samples: int = None) -> dict:
+def run_ragas_evaluation(num_samples: int = None, reference_free: bool = False) -> dict:
     """
     Run RAGAS evaluation on the RAG pipeline.
     
     Args:
         num_samples: Number of test samples to use (None = all)
+        reference_free: If True, only use metrics that don't require ground truth
+                       (Faithfulness, Answer Relevancy)
         
     Returns:
         Dictionary with evaluation results
@@ -136,7 +153,7 @@ def run_ragas_evaluation(num_samples: int = None) -> dict:
         
         # Get RAG response
         start = time.time()
-        response = pipeline.chat(question, top_k=5)
+        response = pipeline.chat(question, top_k=7)
         elapsed = time.time() - start
         
         # Extract contexts from sources
@@ -152,12 +169,20 @@ def run_ragas_evaluation(num_samples: int = None) -> dict:
     print("\nCreating RAGAS dataset...")
     
     # Create dataset for RAGAS
-    data = {
-        "question": questions,
-        "answer": answers,
-        "contexts": contexts_list,
-        "ground_truth": ground_truths,
-    }
+    if reference_free:
+        # Reference-free mode: no ground truth needed
+        data = {
+            "question": questions,
+            "answer": answers,
+            "contexts": contexts_list,
+        }
+    else:
+        data = {
+            "question": questions,
+            "answer": answers,
+            "contexts": contexts_list,
+            "ground_truth": ground_truths,
+        }
     dataset = Dataset.from_dict(data)
     
     print(f"Dataset created with {len(dataset)} samples\n")
@@ -177,13 +202,23 @@ def run_ragas_evaluation(num_samples: int = None) -> dict:
         api_key=api_key,
     ))
     
-    # Define metrics
-    metrics = [
-        faithfulness,
-        answer_relevancy,
-        context_precision,
-        context_recall,
-    ]
+    # Define metrics based on mode
+    if reference_free:
+        # Reference-free: only Faithfulness and Answer Relevancy
+        print("Mode: Reference-Free (no ground truth needed)")
+        metrics = [
+            faithfulness,
+            answer_relevancy,
+        ]
+    else:
+        # Full evaluation with ground truth
+        print("Mode: Full Evaluation (with ground truth)")
+        metrics = [
+            faithfulness,
+            answer_relevancy,
+            context_precision,
+            context_recall,
+        ]
     
     print("Running RAGAS evaluation (this may take a few minutes)...")
     print("-" * 70)
@@ -278,11 +313,20 @@ def main():
         default=None,
         help="Output JSON file path"
     )
+    parser.add_argument(
+        "--no-ground-truth", "--reference-free",
+        action="store_true",
+        dest="reference_free",
+        help="Reference-free mode: only evaluate Faithfulness and Answer Relevancy (no ground truth needed)"
+    )
     
     args = parser.parse_args()
     
     # Run evaluation
-    results = run_ragas_evaluation(num_samples=args.samples)
+    results = run_ragas_evaluation(
+        num_samples=args.samples,
+        reference_free=args.reference_free
+    )
     
     # Save results
     if args.output:

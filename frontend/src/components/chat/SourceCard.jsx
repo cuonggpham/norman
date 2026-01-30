@@ -7,8 +7,11 @@ import './SourceCard.css';
  * Shows structured hierarchy: Law → Chapter → Article → Paragraph
  * Supports active state for when user clicks inline citation [1], [2], etc.
  */
+const TEXT_TRUNCATE_LENGTH = 500;
+
 export default function SourceCard({ source, index, isActive = false, onActivated }) {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isTextExpanded, setIsTextExpanded] = useState(false);
     const [translatedText, setTranslatedText] = useState(null);
     const [isTranslating, setIsTranslating] = useState(false);
     const [translateError, setTranslateError] = useState(null);
@@ -199,7 +202,33 @@ export default function SourceCard({ source, index, isActive = false, onActivate
                             </button>
                         </div>
                         <div className="source-card__text-wrapper">
-                            <p className="source-card__text">{text}</p>
+                            <p className="source-card__text">
+                                {text.length > TEXT_TRUNCATE_LENGTH && !isTextExpanded
+                                    ? text.slice(0, TEXT_TRUNCATE_LENGTH) + '...'
+                                    : text}
+                            </p>
+                            {text.length > TEXT_TRUNCATE_LENGTH && (
+                                <button
+                                    className="source-card__expand-btn"
+                                    onClick={() => setIsTextExpanded(!isTextExpanded)}
+                                >
+                                    {isTextExpanded ? (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M18 15l-6-6-6 6" />
+                                            </svg>
+                                            <span>Thu gọn</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M6 9l6 6 6-6" />
+                                            </svg>
+                                            <span>Xem thêm</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
                     </div>
 

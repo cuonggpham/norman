@@ -267,7 +267,7 @@ class BasePipeline(ABC):
         return SourceDocument(
             law_title=payload.get("law_title", ""),
             article=payload.get("article_title", ""),
-            text=payload.get("text", "")[:500],  # Truncate for response
+            text=payload.get("text", ""),  # Full text, frontend handles truncation
             score=result.get("score", 0.0),
             highlight_path=highlight_path if isinstance(highlight_path, dict) else {},
             # Additional structured metadata
